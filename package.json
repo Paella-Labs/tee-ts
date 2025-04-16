@@ -1,15 +1,17 @@
 {
-  "name": "tee-ts",
-  "module": "index.ts",
-  "type": "module",
-  "private": true,
+	"name": "tee-ts",
+	"module": "index.ts",
+	"type": "module",
+	"private": true,
 	"scripts": {
-    "start": "bun run index.ts"
-  },
-  "devDependencies": {
-    "@types/bun": "latest"
-  },
-  "peerDependencies": {
-    "typescript": "^5"
-  }
+		"start": "bun run index.ts",
+		"fmt": "bunx biome format --write ."
+	},
+	"devDependencies": {
+		"@biomejs/biome": "1.9.4",
+		"@types/bun": "latest"
+	},
+	"peerDependencies": {
+		"typescript": "^5"
+	}
 }
