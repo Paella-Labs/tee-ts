@@ -16,6 +16,8 @@
 		"typescript": "^5"
 	},
 	"dependencies": {
-		"shamir-secret-sharing": "^0.0.4"
+		"@sendgrid/mail": "^8.1.5",
+		"shamir-secret-sharing": "^0.0.4",
+		"zod": "^3.24.3"
 	}
 }
