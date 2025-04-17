@@ -1,6 +1,6 @@
-# TEE Service
+# TEE Service (Mock)
 
-A secure signer service with OTP verification for crossmint wallets.
+Mock TEE service for prototyping auth signers.
 
 ## Setup
 
