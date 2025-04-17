@@ -1,7 +1,7 @@
 {
 	"compilerOptions": {
 		// Environment setup & latest features
-		"lib": ["ESNext"],
+		"lib": ["ESNext", "DOM", "DOM.Iterable"],
 		"target": "ESNext",
 		"module": "ESNext",
 		"moduleDetection": "force",
@@ -23,6 +23,9 @@
 		// Some stricter flags (disabled by default)
 		"noUnusedLocals": false,
 		"noUnusedParameters": false,
-		"noPropertyAccessFromIndexSignature": false
+		"noPropertyAccessFromIndexSignature": false,
+
+		// Add types for Bun
+		"types": ["bun-types"]
 	}
 }
