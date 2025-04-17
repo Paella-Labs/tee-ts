@@ -1,0 +1,19 @@
+meta {
+  name: Start Signer Creation
+  type: http
+  seq: 2
+}
+
+post {
+  url: http://localhost:3000/signers
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "userId": "devlyn",
+    "projectId": "test_project",
+    "authId": "EMAIL_OTP:devlyn@paella.dev"
+  }
+}

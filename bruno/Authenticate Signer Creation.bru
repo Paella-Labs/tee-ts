@@ -1,0 +1,17 @@
+meta {
+  name: Authenticate Signer Creation
+  type: http
+  seq: 3
+}
+
+post {
+  url: http://localhost:3000/requests/4b1b1956-033e-4c3a-a40c-3b393b53bdc4/auth
+  body: json
+  auth: none
+}
+
+body:json {
+  {
+    "otp": "251531"
+  }
+}
