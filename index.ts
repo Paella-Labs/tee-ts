@@ -114,10 +114,16 @@ const server = Bun.serve({
 						authId,
 					);
 
-					return Response.json({
+					const res = Response.json({
 						requestId,
 						message: "OTP sent successfully",
 					});
+					res.headers.set("Access-Control-Allow-Origin", "*");
+					res.headers.set(
+						"Access-Control-Allow-Methods",
+						"GET, POST, PUT, DELETE, OPTIONS",
+					);
+					return res;
 				} catch (error) {
 					return handleError(error, "/signers");
 				}
@@ -145,12 +151,16 @@ const server = Bun.serve({
 						"[DEBUG] /requests/auth",
 					);
 
-					const shares = await signerService.completeSignerCreation(
-						requestId,
-						otp,
-					);
+					const { device, auth, signerId } =
+						await signerService.completeSignerCreation(requestId, otp);
 
-					return Response.json({ shares });
+					const res = Response.json({ shares: { device, auth }, signerId });
+					res.headers.set("Access-Control-Allow-Origin", "*");
+					res.headers.set(
+						"Access-Control-Allow-Methods",
+						"GET, POST, PUT, DELETE, OPTIONS",
+					);
+					return res;
 				} catch (error) {
 					return handleError(error, "/requests/:requestId/auth");
 				}

@@ -61,7 +61,7 @@ export class SignerService {
 	public async completeSignerCreation(
 		requestId: string,
 		otp: string,
-	): Promise<{ device: string; auth: string }> {
+	): Promise<{ device: string; auth: string; signerId: string }> {
 		// Retrieve request from storage
 		const request = this.pendingRequests.get(requestId);
 		if (!request) {
@@ -91,8 +91,11 @@ export class SignerService {
 		this.pendingRequests.delete(requestId);
 
 		return {
-			device: Buffer.from(device).toString("hex"),
-			auth: Buffer.from(auth).toString("hex"),
+			device: Buffer.from(device).toString("base64"),
+			auth: Buffer.from(auth).toString("base64"),
+			signerId: Buffer.from(
+				await crypto.subtle.digest("SHA-256", masterSecret),
+			).toString("base64"),
 		};
 	}
 
@@ -101,8 +104,6 @@ export class SignerService {
 		body: string,
 		recipient: string,
 	): Promise<void> {
-		console.log("[DEBUG] Attempting to send email to:", recipient);
-
 		const msg = {
 			to: recipient,
 			from: "hello@crossmint.io",
@@ -110,6 +111,8 @@ export class SignerService {
 			text: body,
 			html: `<div>${body}</div>`,
 		};
+		console.log("[DEBUG] Attempting to send email to:", recipient);
+		console.log(msg);
 
 		await sendgrid.send(msg);
 	}
