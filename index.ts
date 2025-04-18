@@ -77,7 +77,7 @@ function handleError(error: unknown, logPrefix = ""): Response {
 		console.error("[ERROR] Unhandled route error:", error);
 	}
 
-	return new Response(
+	const res = new Response(
 		JSON.stringify({
 			error: "Request failed",
 			message: error instanceof Error ? error.message : String(error),
@@ -88,6 +88,12 @@ function handleError(error: unknown, logPrefix = ""): Response {
 			headers: { "Content-Type": "application/json" },
 		},
 	);
+	res.headers.set("Access-Control-Allow-Origin", "*");
+	res.headers.set(
+		"Access-Control-Allow-Methods",
+		"GET, POST, PUT, DELETE, OPTIONS",
+	);
+	return res;
 }
 
 const signerService = new SignerService(
