@@ -21,8 +21,8 @@ const SignerRequestSchema = z.object({
 	authId: z
 		.string()
 		.min(1, { message: "Auth ID is required" })
-		.refine((val) => val.startsWith("EMAIL_OTP:"), {
-			message: "Auth ID must start with EMAIL_OTP:",
+		.refine((val) => val.startsWith("email:"), {
+			message: "Auth ID must start with email:",
 		})
 		.refine(
 			(val) => {
