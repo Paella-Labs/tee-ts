@@ -104,24 +104,32 @@ const signerService = new SignerService(
 const server = Bun.serve({
 	port: env.PORT,
 	routes: {
-		"/signers": {
+		"/signers/:deviceId": {
 			async POST(req) {
 				try {
+					const { deviceId } = req.params;
+
+					if (!deviceId) {
+						throw new Response(JSON.stringify({ error: "Invalid deviceId" }), {
+							status: 400,
+						});
+					}
+
 					const body = await req.json();
 					const { userId, projectId, authId } = validateRequest(
 						SignerRequestSchema,
 						body,
-						"[DEBUG] /signers",
+						`[DEBUG] /signers${deviceId}`,
 					);
 
-					const requestId = await signerService.initiateSignerCreation(
+					await signerService.initiateSignerCreation(
 						userId,
 						projectId,
 						authId,
+						deviceId,
 					);
 
 					const res = Response.json({
-						requestId,
 						message: "OTP sent successfully",
 					});
 					res.headers.set("Access-Control-Allow-Origin", "*");
@@ -136,18 +144,15 @@ const server = Bun.serve({
 			},
 		},
 
-		"/requests/:requestId/auth": {
+		"/signers/:deviceId/auth": {
 			async POST(req) {
 				try {
-					const { requestId } = req.params;
+					const { deviceId } = req.params;
 
-					if (!requestId) {
-						throw new Response(
-							JSON.stringify({ error: "Invalid request ID" }),
-							{
-								status: 400,
-							},
-						);
+					if (!deviceId) {
+						throw new Response(JSON.stringify({ error: "Invalid deviceId" }), {
+							status: 400,
+						});
 					}
 
 					const body = await req.json();
@@ -158,7 +163,7 @@ const server = Bun.serve({
 					);
 
 					const { device, auth, signerId } =
-						await signerService.completeSignerCreation(requestId, otp);
+						await signerService.completeSignerCreation(deviceId, otp);
 
 					const res = Response.json({ shares: { device, auth }, signerId });
 					res.headers.set("Access-Control-Allow-Origin", "*");
