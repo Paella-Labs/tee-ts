@@ -6,7 +6,10 @@ const env = z
 		SENDGRID_API_KEY: z
 			.string()
 			.min(1, { message: "SendGrid API key is required" }),
-		MOCK_TEE_SECRET: z.string().min(1, { message: "TEE_SECRET is required" }),
+		MOCK_TEE_SECRET: z
+			.string()
+			.min(1, { message: "MOCK_TEE_SECRET is required" }),
+		ACCESS_SECRET: z.string().min(1, { message: "ACCESS_SECRET is required" }),
 		PORT: z
 			.string()
 			.optional()
@@ -88,12 +91,15 @@ function handleError(error: unknown, logPrefix = ""): Response {
 			headers: { "Content-Type": "application/json" },
 		},
 	);
-	res.headers.set("Access-Control-Allow-Origin", "*");
-	res.headers.set(
-		"Access-Control-Allow-Methods",
-		"GET, POST, PUT, DELETE, OPTIONS",
-	);
 	return res;
+}
+
+function authenticate(req: Request) {
+	if (req.headers.get("authorization") !== `${env.ACCESS_SECRET}`) {
+		throw new Response(JSON.stringify({ error: "Unauthorized" }), {
+			status: 401,
+		});
+	}
 }
 
 const signerService = new SignerService(
@@ -107,6 +113,7 @@ const server = Bun.serve({
 		"/signers/:deviceId": {
 			async POST(req) {
 				try {
+					authenticate(req);
 					const { deviceId } = req.params;
 
 					if (!deviceId) {
@@ -132,11 +139,6 @@ const server = Bun.serve({
 					const res = Response.json({
 						message: "OTP sent successfully",
 					});
-					res.headers.set("Access-Control-Allow-Origin", "*");
-					res.headers.set(
-						"Access-Control-Allow-Methods",
-						"GET, POST, PUT, DELETE, OPTIONS",
-					);
 					return res;
 				} catch (error) {
 					return handleError(error, "/signers");
@@ -147,6 +149,7 @@ const server = Bun.serve({
 		"/signers/:deviceId/auth": {
 			async POST(req) {
 				try {
+					authenticate(req);
 					const { deviceId } = req.params;
 
 					if (!deviceId) {
@@ -166,11 +169,6 @@ const server = Bun.serve({
 						await signerService.completeSignerCreation(deviceId, otp);
 
 					const res = Response.json({ shares: { device, auth }, signerId });
-					res.headers.set("Access-Control-Allow-Origin", "*");
-					res.headers.set(
-						"Access-Control-Allow-Methods",
-						"GET, POST, PUT, DELETE, OPTIONS",
-					);
 					return res;
 				} catch (error) {
 					return handleError(error, "/requests/:requestId/auth");
