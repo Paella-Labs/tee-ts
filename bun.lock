@@ -4,9 +4,9 @@
     "": {
       "name": "tee-ts",
       "dependencies": {
-        "@sendgrid/mail": "8.1.5",
-        "shamir-secret-sharing": "0.0.4",
-        "zod": "3.24.3",
+        "@sendgrid/mail": "^8.1.5",
+        "shamir-secret-sharing": "^0.0.4",
+        "zod": "^3.24.3",
       },
       "devDependencies": {
         "@biomejs/biome": "1.9.4",
