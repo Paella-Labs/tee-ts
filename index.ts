@@ -1,46 +1,13 @@
-import { z } from "zod";
 import { SignerService } from "./service";
+import {
+	ENVSchema,
+	OTPVerificationSchema,
+	SignerPreGenerationSchema,
+	SignerRequestSchema,
+} from "./schema";
+import type { z } from "zod";
 
-const env = z
-	.object({
-		SENDGRID_API_KEY: z
-			.string()
-			.min(1, { message: "SendGrid API key is required" }),
-		MOCK_TEE_SECRET: z
-			.string()
-			.min(1, { message: "MOCK_TEE_SECRET is required" }),
-		ACCESS_SECRET: z.string().min(1, { message: "ACCESS_SECRET is required" }),
-		PORT: z
-			.string()
-			.optional()
-			.transform((val) => (val ? Number.parseInt(val, 10) : 3000)),
-	})
-	.parse(process.env);
-
-// Zod schemas for request validation
-const SignerRequestSchema = z.object({
-	userId: z.string().min(1, { message: "User ID is required" }),
-	projectId: z.string().min(1, { message: "Project ID is required" }),
-	authId: z
-		.string()
-		.min(1, { message: "Auth ID is required" })
-		.refine((val) => val.startsWith("email:"), {
-			message: "Auth ID must start with email:",
-		})
-		.refine(
-			(val) => {
-				const email = val.split(":")[1];
-				return email?.includes("@");
-			},
-			{
-				message: "Auth ID must contain a valid email address",
-			},
-		),
-});
-
-const OTPVerificationSchema = z.object({
-	otp: z.string().length(6, { message: "OTP must be 6 digits" }),
-});
+const env = ENVSchema.parse(process.env);
 
 function validateRequest<T extends z.ZodType>(
 	schema: T,
@@ -126,7 +93,7 @@ const server = Bun.serve({
 					const { userId, projectId, authId } = validateRequest(
 						SignerRequestSchema,
 						body,
-						`[DEBUG] /signers${deviceId}`,
+						`[DEBUG] POST /signers/${deviceId}`,
 					);
 
 					await signerService.initiateSignerCreation(
@@ -141,7 +108,33 @@ const server = Bun.serve({
 					});
 					return res;
 				} catch (error) {
-					return handleError(error, "/signers");
+					return handleError(error, "POST /signers/:deviceId");
+				}
+			},
+		},
+		"/signers/public-key": {
+			async PUT(req) {
+				try {
+					authenticate(req);
+					const body = await req.json();
+					const { userId, projectId, authId, signingAlgorithm } =
+						validateRequest(
+							SignerPreGenerationSchema,
+							body,
+							"[DEBUG] PUT /signers/public-key",
+						);
+
+					const publicKey = await signerService.preGenerateSigner(
+						userId,
+						projectId,
+						authId,
+						signingAlgorithm,
+					);
+
+					const res = Response.json({ publicKey });
+					return res;
+				} catch (error) {
+					return handleError(error, "PUT /signers/public-key");
 				}
 			},
 		},
@@ -162,7 +155,7 @@ const server = Bun.serve({
 					const { otp } = validateRequest(
 						OTPVerificationSchema,
 						body,
-						"[DEBUG] /requests/auth",
+						"[DEBUG] POST /requests/auth",
 					);
 
 					const { device, auth, signerId } =
@@ -171,7 +164,7 @@ const server = Bun.serve({
 					const res = Response.json({ shares: { device, auth }, signerId });
 					return res;
 				} catch (error) {
-					return handleError(error, "/requests/:requestId/auth");
+					return handleError(error, "POST /requests/:requestId/auth");
 				}
 			},
 		},

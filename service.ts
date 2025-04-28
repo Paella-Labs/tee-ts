@@ -1,5 +1,7 @@
 import sendgrid from "@sendgrid/mail";
+import { Keypair } from "@solana/web3.js";
 import { split } from "shamir-secret-sharing";
+import type { SigningAlgorithm } from "./schema";
 
 interface Request {
 	otp: string;
@@ -17,6 +19,32 @@ export class SignerService {
 		private readonly keyDerivationSecret: string,
 	) {
 		sendgrid.setApiKey(sendgridAPIKey);
+	}
+
+	public async preGenerateSigner(
+		userId: string,
+		projectId: string,
+		authId: string,
+		signingAlgorithm: SigningAlgorithm,
+	): Promise<string> {
+		if (signingAlgorithm !== "EDDSA_ED25519") {
+			throw new Response(
+				JSON.stringify({
+					error: `signingAlgorithm ${signingAlgorithm} not yet supported`,
+				}),
+				{
+					status: 400,
+				},
+			);
+		}
+
+		const masterSecret = await this.deriveMasterSecret(
+			userId,
+			projectId,
+			authId,
+		);
+		const keypair = Keypair.fromSeed(masterSecret);
+		return keypair.publicKey.toBuffer().toString("base64");
 	}
 
 	/**
