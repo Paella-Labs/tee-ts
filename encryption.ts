@@ -135,11 +135,7 @@ export class EncryptionService {
 	}
 
 	private base64ToArrayBuffer(base64: string): ArrayBuffer {
-		const binaryString = atob(base64);
-		const bytes = new Uint8Array(binaryString.length);
-		for (let i = 0; i < binaryString.length; i++) {
-			bytes[i] = binaryString.charCodeAt(i);
-		}
-		return bytes.buffer;
+		const buffer = Buffer.from(base64, "base64");
+		return buffer.buffer;
 	}
 }

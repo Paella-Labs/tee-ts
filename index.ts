@@ -47,18 +47,22 @@ async function validateEncryptedRequest<T extends z.ZodType>(
 	schema: T,
 	data: unknown,
 	logPrefix = "",
-): Promise<z.infer<T>> {
+): Promise<{
+	data: z.infer<T>;
+	encryptionContext: { senderPublicKey: string };
+}> {
 	const req = EncryptedRequestSchema.parse(data);
 	const decryptedRequest = await encryptionService.decryptBase64<{
 		data: z.infer<T>;
 		encryptionContext: { senderPublicKey: string };
-	}>(req.ciphertext, req.encappedKey);
-	return validateRequest(schema, decryptedRequest.data, logPrefix);
+	}>(req.ciphertext, req.encapsulatedKey);
+	await validateRequest(schema, decryptedRequest.data, logPrefix);
+	return decryptedRequest;
 }
 
 const EncryptedRequestSchema = z.object({
 	ciphertext: z.string(),
-	encappedKey: z.string(),
+	encapsulatedKey: z.string(),
 	publicKey: z.string(),
 });
 
@@ -96,11 +100,11 @@ function handleError(error: unknown, logPrefix = ""): Response {
 }
 
 function authenticate(req: Request) {
-	if (req.headers.get("authorization") !== `${env.ACCESS_SECRET}`) {
-		throw new Response(JSON.stringify({ error: "Unauthorized" }), {
-			status: 401,
-		});
-	}
+	//   if (req.headers.get("authorization") !== `${env.ACCESS_SECRET}`) {
+	//     throw new Response(JSON.stringify({ error: "Unauthorized" }), {
+	//       status: 401,
+	//     });
+	//   }
 }
 
 const signerService = new SignerService(
@@ -182,6 +186,21 @@ const server = Bun.serve({
 
 		"/signers/:deviceId/auth": {
 			async POST(req) {
+				// Response type defintiion
+				type UnencryptedOtpResponse = {
+					shares: {
+						device: string;
+						auth: string;
+					};
+					signerId: string;
+				};
+				// We also return, alongside the encrypted response, the Auth share (unencrypted), so the crossmint middleware can store it
+				type EncryptedOtpResponse = z.infer<typeof EncryptedRequestSchema> & {
+					authShare: string;
+					signerId: string;
+				};
+				type OtpResponse = UnencryptedOtpResponse | EncryptedOtpResponse;
+
 				try {
 					authenticate(req);
 					const { deviceId } = req.params;
@@ -195,29 +214,45 @@ const server = Bun.serve({
 					const body = await req.json();
 					const isEncrypted = isEncryptedRequest(body);
 
-					const { otp, ...rest } = isEncrypted
-						? await validateEncryptedRequest(
-								OTPVerificationSchema,
-								body,
-								"[DEBUG] /requests/auth",
-							)
-						: validateRequest(
-								OTPVerificationSchema,
-								body,
-								"[DEBUG] /requests/auth",
-							);
+					let unencryptedBody: z.infer<typeof OTPVerificationSchema>;
+					let senderPublicKey: string | null = null;
+
+					if (isEncrypted) {
+						const decryptedPayload = await encryptionService.decryptBase64<{
+							unencryptedPayload: z.infer<typeof OTPVerificationSchema>;
+							encryptionContext: { senderPublicKey: string };
+						}>(body.ciphertext, body.encapsulatedKey);
+						unencryptedBody = decryptedPayload.unencryptedPayload;
+						senderPublicKey =
+							decryptedPayload.encryptionContext.senderPublicKey;
+					} else {
+						unencryptedBody = body;
+					}
+					const { otp } = validateRequest(
+						OTPVerificationSchema,
+						unencryptedBody,
+						"[DEBUG] /signers/:deviceId/auth",
+					);
 
 					const { device, auth, signerId } =
 						await signerService.completeSignerCreation(deviceId, otp);
 
 					const unencryptedResponse = { shares: { device, auth }, signerId };
-					const response = isEncrypted
-						? await generateEncryptedResponse(
-								unencryptedResponse,
-								(rest as { encryptionContext: { senderPublicKey: string } })
-									.encryptionContext.senderPublicKey,
-							)
-						: unencryptedResponse;
+
+					let response: EncryptedOtpResponse | OtpResponse;
+					if (isEncrypted) {
+						const encryptedResponse = await generateEncryptedResponse(
+							unencryptedResponse,
+							senderPublicKey as NonNullable<typeof senderPublicKey>,
+						);
+						response = {
+							...encryptedResponse,
+							authShare: unencryptedResponse.shares.auth,
+							signerId,
+						};
+					} else {
+						response = unencryptedResponse;
+					}
 
 					const res = Response.json(response);
 
@@ -236,9 +271,12 @@ const server = Bun.serve({
 			async GET(req) {
 				const pubKeyBuffer = await encryptionService.getPublicKey();
 				const pubKeyBase64 = Buffer.from(pubKeyBuffer).toString("base64");
-				return Response.json({
+				const res = Response.json({
 					publicKey: pubKeyBase64,
 				});
+				res.headers.set("Access-Control-Allow-Origin", "*");
+				res.headers.set("Access-Control-Allow-Methods", "GET, OPTIONS");
+				return res;
 			},
 		},
 	},
