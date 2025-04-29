@@ -192,12 +192,12 @@ const server = Bun.serve({
 						device: string;
 						auth: string;
 					};
-					signerId: string;
 				};
 				// We also return, alongside the encrypted response, the Auth share (unencrypted), so the crossmint middleware can store it
 				type EncryptedOtpResponse = z.infer<typeof EncryptedRequestSchema> & {
-					authShare: string;
-					signerId: string;
+					shares: {
+						auth: string;
+					};
 				};
 				type OtpResponse = UnencryptedOtpResponse | EncryptedOtpResponse;
 
@@ -235,10 +235,12 @@ const server = Bun.serve({
 						"[DEBUG] /signers/:deviceId/auth",
 					);
 
-					const { device, auth, signerId } =
-						await signerService.completeSignerCreation(deviceId, otp);
+					const { device, auth } = await signerService.completeSignerCreation(
+						deviceId,
+						otp,
+					);
 
-					const unencryptedResponse = { shares: { device, auth }, signerId };
+					const unencryptedResponse = { shares: { device, auth } };
 
 					let response: EncryptedOtpResponse | OtpResponse;
 					if (isEncrypted) {
@@ -248,8 +250,9 @@ const server = Bun.serve({
 						);
 						response = {
 							...encryptedResponse,
-							authShare: unencryptedResponse.shares.auth,
-							signerId,
+							shares: {
+								auth: unencryptedResponse.shares.auth,
+							},
 						};
 					} else {
 						response = unencryptedResponse;
