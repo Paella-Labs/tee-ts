@@ -1,5 +1,7 @@
 import sendgrid from "@sendgrid/mail";
+import { Keypair } from "@solana/web3.js";
 import { split } from "shamir-secret-sharing";
+import type { SigningAlgorithm } from "./schema";
 
 interface Request {
 	otp: string;
@@ -19,6 +21,32 @@ export class SignerService {
 		sendgrid.setApiKey(sendgridAPIKey);
 	}
 
+	public async preGenerateSigner(
+		userId: string,
+		projectId: string,
+		authId: string,
+		signingAlgorithm: SigningAlgorithm,
+	): Promise<string> {
+		if (signingAlgorithm !== "EDDSA_ED25519") {
+			throw new Response(
+				JSON.stringify({
+					error: `signingAlgorithm ${signingAlgorithm} not yet supported`,
+				}),
+				{
+					status: 400,
+				},
+			);
+		}
+
+		const masterSecret = await this.deriveMasterSecret(
+			userId,
+			projectId,
+			authId,
+		);
+		const keypair = Keypair.fromSeed(masterSecret);
+		return keypair.publicKey.toBuffer().toString("base64");
+	}
+
 	/**
 	 * Create a new signer and start OTP verification flow
 	 */
@@ -26,7 +54,8 @@ export class SignerService {
 		userId: string,
 		projectId: string,
 		authId: string,
-	): Promise<string> {
+		deviceId: string,
+	): Promise<void> {
 		const emailPart = authId.split(":")[1];
 		if (emailPart == null) {
 			throw new Error("Invalid authId format");
@@ -35,10 +64,7 @@ export class SignerService {
 		const otp = this.generateOTP();
 		console.log("[DEBUG] Generated OTP:", otp);
 
-		const requestId = crypto.randomUUID();
-		console.log("[DEBUG] Generated request ID:", requestId);
-
-		this.pendingRequests.set(requestId, {
+		this.pendingRequests.set(deviceId, {
 			otp,
 			userId,
 			projectId,
@@ -51,23 +77,26 @@ export class SignerService {
 			`Your verification code is: ${otp}`,
 			emailPart,
 		);
-
-		return requestId;
 	}
 
 	/**
 	 * Verify OTP and generate key shares
 	 */
 	public async completeSignerCreation(
-		requestId: string,
+		deviceId: string,
 		otp: string,
 	): Promise<{ device: string; auth: string; signerId: string }> {
 		// Retrieve request from storage
-		const request = this.pendingRequests.get(requestId);
+		const request = this.pendingRequests.get(deviceId);
 		if (!request) {
-			throw new Response(JSON.stringify({ error: "Invalid request ID" }), {
-				status: 401,
-			});
+			throw new Response(
+				JSON.stringify({
+					error: `Authentication for device ${deviceId} is not pending`,
+				}),
+				{
+					status: 400,
+				},
+			);
 		}
 
 		if (request.otp !== otp) {
@@ -88,7 +117,7 @@ export class SignerService {
 			throw new Error("shamir secret split failed");
 		}
 
-		this.pendingRequests.delete(requestId);
+		this.pendingRequests.delete(deviceId);
 
 		return {
 			device: Buffer.from(device).toString("base64"),
