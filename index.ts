@@ -100,11 +100,11 @@ function handleError(error: unknown, logPrefix = ""): Response {
 }
 
 function authenticate(req: Request) {
-	//   if (req.headers.get("authorization") !== `${env.ACCESS_SECRET}`) {
-	//     throw new Response(JSON.stringify({ error: "Unauthorized" }), {
-	//       status: 401,
-	//     });
-	//   }
+	if (req.headers.get("authorization") !== `${env.ACCESS_SECRET}`) {
+		throw new Response(JSON.stringify({ error: "Unauthorized" }), {
+			status: 401,
+		});
+	}
 }
 
 const signerService = new SignerService(
@@ -219,15 +219,16 @@ const server = Bun.serve({
 
 					if (isEncrypted) {
 						const decryptedPayload = await encryptionService.decryptBase64<{
-							unencryptedPayload: z.infer<typeof OTPVerificationSchema>;
+							data: z.infer<typeof OTPVerificationSchema>;
 							encryptionContext: { senderPublicKey: string };
 						}>(body.ciphertext, body.encapsulatedKey);
-						unencryptedBody = decryptedPayload.unencryptedPayload;
+						unencryptedBody = decryptedPayload.data;
 						senderPublicKey =
 							decryptedPayload.encryptionContext.senderPublicKey;
 					} else {
 						unencryptedBody = body;
 					}
+					console.log("Unencrypted payload", unencryptedBody);
 					const { otp } = validateRequest(
 						OTPVerificationSchema,
 						unencryptedBody,
