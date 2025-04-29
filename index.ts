@@ -43,23 +43,6 @@ function validateRequest<T extends z.ZodType>(
 	return validationResult.data;
 }
 
-async function validateEncryptedRequest<T extends z.ZodType>(
-	schema: T,
-	data: unknown,
-	logPrefix = "",
-): Promise<{
-	data: z.infer<T>;
-	encryptionContext: { senderPublicKey: string };
-}> {
-	const req = EncryptedRequestSchema.parse(data);
-	const decryptedRequest = await encryptionService.decryptBase64<{
-		data: z.infer<T>;
-		encryptionContext: { senderPublicKey: string };
-	}>(req.ciphertext, req.encapsulatedKey);
-	await validateRequest(schema, decryptedRequest.data, logPrefix);
-	return decryptedRequest;
-}
-
 const EncryptedRequestSchema = z.object({
 	ciphertext: z.string(),
 	encapsulatedKey: z.string(),
