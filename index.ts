@@ -2,10 +2,10 @@ import { SignerService } from "./service";
 import { EncryptionService } from "./encryption";
 
 import {
-  ENVSchema,
-  OTPVerificationSchema,
-  SignerPreGenerationSchema,
-  SignerRequestSchema,
+	ENVSchema,
+	OTPVerificationSchema,
+	SignerPreGenerationSchema,
+	SignerRequestSchema,
 } from "./schema";
 import { z } from "zod";
 
@@ -17,232 +17,232 @@ await encryptionService.init();
 console.log("Encryption service initialized successfully");
 
 function validateRequest<T extends z.ZodType>(
-  schema: T,
-  data: unknown,
-  logPrefix = ""
+	schema: T,
+	data: unknown,
+	logPrefix = "",
 ): z.infer<T> {
-  const validationResult = schema.safeParse(data);
+	const validationResult = schema.safeParse(data);
 
-  if (!validationResult.success) {
-    if (logPrefix) {
-      console.log(
-        `${logPrefix}: Validation failed`,
-        validationResult.error.format()
-      );
-    }
+	if (!validationResult.success) {
+		if (logPrefix) {
+			console.log(
+				`${logPrefix}: Validation failed`,
+				validationResult.error.format(),
+			);
+		}
 
-    throw new Response(
-      JSON.stringify({
-        error: "Validation failed",
-        details: validationResult.error.format(),
-      }),
-      { status: 400 }
-    );
-  }
+		throw new Response(
+			JSON.stringify({
+				error: "Validation failed",
+				details: validationResult.error.format(),
+			}),
+			{ status: 400 },
+		);
+	}
 
-  return validationResult.data;
+	return validationResult.data;
 }
 
 async function validateEncryptedRequest<T extends z.ZodType>(
-  schema: T,
-  data: unknown,
-  logPrefix = ""
+	schema: T,
+	data: unknown,
+	logPrefix = "",
 ): Promise<z.infer<T>> {
-  const req = EncryptedRequestSchema.parse(data);
-  const decryptedRequest = await encryptionService.decryptBase64<{
-    data: z.infer<T>;
-    encryptionContext: { senderPublicKey: string };
-  }>(req.ciphertext, req.encappedKey);
-  return validateRequest(schema, decryptedRequest.data, logPrefix);
+	const req = EncryptedRequestSchema.parse(data);
+	const decryptedRequest = await encryptionService.decryptBase64<{
+		data: z.infer<T>;
+		encryptionContext: { senderPublicKey: string };
+	}>(req.ciphertext, req.encappedKey);
+	return validateRequest(schema, decryptedRequest.data, logPrefix);
 }
 
 const EncryptedRequestSchema = z.object({
-  ciphertext: z.string(),
-  encappedKey: z.string(),
-  publicKey: z.string(),
+	ciphertext: z.string(),
+	encappedKey: z.string(),
+	publicKey: z.string(),
 });
 
 function isEncryptedRequest(
-  data: unknown
+	data: unknown,
 ): data is z.infer<typeof EncryptedRequestSchema> {
-  const validationResult = EncryptedRequestSchema.safeParse(data);
+	const validationResult = EncryptedRequestSchema.safeParse(data);
 
-  return validationResult.success;
+	return validationResult.success;
 }
 
 function handleError(error: unknown, logPrefix = ""): Response {
-  if (error instanceof Response) {
-    return error;
-  }
+	if (error instanceof Response) {
+		return error;
+	}
 
-  if (logPrefix) {
-    console.error(`[ERROR] ${logPrefix}:`, error);
-  } else {
-    console.error("[ERROR] Unhandled route error:", error);
-  }
+	if (logPrefix) {
+		console.error(`[ERROR] ${logPrefix}:`, error);
+	} else {
+		console.error("[ERROR] Unhandled route error:", error);
+	}
 
-  const res = new Response(
-    JSON.stringify({
-      error: "Request failed",
-      message: error instanceof Error ? error.message : String(error),
-      code: "INTERNAL_SERVER_ERROR",
-    }),
-    {
-      status: 500,
-      headers: { "Content-Type": "application/json" },
-    }
-  );
-  return res;
+	const res = new Response(
+		JSON.stringify({
+			error: "Request failed",
+			message: error instanceof Error ? error.message : String(error),
+			code: "INTERNAL_SERVER_ERROR",
+		}),
+		{
+			status: 500,
+			headers: { "Content-Type": "application/json" },
+		},
+	);
+	return res;
 }
 
 function authenticate(req: Request) {
-  if (req.headers.get("authorization") !== `${env.ACCESS_SECRET}`) {
-    throw new Response(JSON.stringify({ error: "Unauthorized" }), {
-      status: 401,
-    });
-  }
+	if (req.headers.get("authorization") !== `${env.ACCESS_SECRET}`) {
+		throw new Response(JSON.stringify({ error: "Unauthorized" }), {
+			status: 401,
+		});
+	}
 }
 
 const signerService = new SignerService(
-  env.SENDGRID_API_KEY,
-  env.MOCK_TEE_SECRET
+	env.SENDGRID_API_KEY,
+	env.MOCK_TEE_SECRET,
 );
 
 async function generateEncryptedResponse<T extends z.ZodType>(
-  data: z.infer<T>,
-  receiverPublicKey: string
+	data: z.infer<T>,
+	receiverPublicKey: string,
 ) {
-  return encryptionService.encryptBase64(data, receiverPublicKey);
+	return encryptionService.encryptBase64(data, receiverPublicKey);
 }
 
 const server = Bun.serve({
-  port: env.PORT,
-  routes: {
-    "/signers/:deviceId": {
-      async POST(req) {
-        try {
-          authenticate(req);
-          const { deviceId } = req.params;
+	port: env.PORT,
+	routes: {
+		"/signers/:deviceId": {
+			async POST(req) {
+				try {
+					authenticate(req);
+					const { deviceId } = req.params;
 
-          if (!deviceId) {
-            throw new Response(JSON.stringify({ error: "Invalid deviceId" }), {
-              status: 400,
-            });
-          }
+					if (!deviceId) {
+						throw new Response(JSON.stringify({ error: "Invalid deviceId" }), {
+							status: 400,
+						});
+					}
 
-          const body = await req.json();
-          const { userId, projectId, authId } = validateRequest(
-            SignerRequestSchema,
-            body,
-            `[DEBUG] POST /signers/${deviceId}`
-          );
+					const body = await req.json();
+					const { userId, projectId, authId } = validateRequest(
+						SignerRequestSchema,
+						body,
+						`[DEBUG] POST /signers/${deviceId}`,
+					);
 
-          await signerService.initiateSignerCreation(
-            userId,
-            projectId,
-            authId,
-            deviceId
-          );
+					await signerService.initiateSignerCreation(
+						userId,
+						projectId,
+						authId,
+						deviceId,
+					);
 
-          const res = Response.json({
-            message: "OTP sent successfully",
-          });
-          return res;
-        } catch (error) {
-          return handleError(error, "POST /signers/:deviceId");
-        }
-      },
-    },
-    "/signers/public-key": {
-      async PUT(req) {
-        try {
-          authenticate(req);
-          const body = await req.json();
-          const { userId, projectId, authId, signingAlgorithm } =
-            validateRequest(
-              SignerPreGenerationSchema,
-              body,
-              "[DEBUG] PUT /signers/public-key"
-            );
+					const res = Response.json({
+						message: "OTP sent successfully",
+					});
+					return res;
+				} catch (error) {
+					return handleError(error, "POST /signers/:deviceId");
+				}
+			},
+		},
+		"/signers/public-key": {
+			async PUT(req) {
+				try {
+					authenticate(req);
+					const body = await req.json();
+					const { userId, projectId, authId, signingAlgorithm } =
+						validateRequest(
+							SignerPreGenerationSchema,
+							body,
+							"[DEBUG] PUT /signers/public-key",
+						);
 
-          const publicKey = await signerService.preGenerateSigner(
-            userId,
-            projectId,
-            authId,
-            signingAlgorithm
-          );
+					const publicKey = await signerService.preGenerateSigner(
+						userId,
+						projectId,
+						authId,
+						signingAlgorithm,
+					);
 
-          const res = Response.json({ publicKey });
-          return res;
-        } catch (error) {
-          return handleError(error, "PUT /signers/public-key");
-        }
-      },
-    },
+					const res = Response.json({ publicKey });
+					return res;
+				} catch (error) {
+					return handleError(error, "PUT /signers/public-key");
+				}
+			},
+		},
 
-    "/signers/:deviceId/auth": {
-      async POST(req) {
-        try {
-          authenticate(req);
-          const { deviceId } = req.params;
+		"/signers/:deviceId/auth": {
+			async POST(req) {
+				try {
+					authenticate(req);
+					const { deviceId } = req.params;
 
-          if (!deviceId) {
-            throw new Response(JSON.stringify({ error: "Invalid deviceId" }), {
-              status: 400,
-            });
-          }
+					if (!deviceId) {
+						throw new Response(JSON.stringify({ error: "Invalid deviceId" }), {
+							status: 400,
+						});
+					}
 
-          const body = await req.json();
-          const isEncrypted = isEncryptedRequest(body);
+					const body = await req.json();
+					const isEncrypted = isEncryptedRequest(body);
 
-          const { otp, ...rest } = isEncrypted
-            ? await validateEncryptedRequest(
-                OTPVerificationSchema,
-                body,
-                "[DEBUG] /requests/auth"
-              )
-            : validateRequest(
-                OTPVerificationSchema,
-                body,
-                "[DEBUG] /requests/auth"
-              );
+					const { otp, ...rest } = isEncrypted
+						? await validateEncryptedRequest(
+								OTPVerificationSchema,
+								body,
+								"[DEBUG] /requests/auth",
+							)
+						: validateRequest(
+								OTPVerificationSchema,
+								body,
+								"[DEBUG] /requests/auth",
+							);
 
-          const { device, auth, signerId } =
-            await signerService.completeSignerCreation(deviceId, otp);
+					const { device, auth, signerId } =
+						await signerService.completeSignerCreation(deviceId, otp);
 
-          const unencryptedResponse = { shares: { device, auth }, signerId };
-          const response = isEncrypted
-            ? await generateEncryptedResponse(
-                unencryptedResponse,
-                (rest as { encryptionContext: { senderPublicKey: string } })
-                  .encryptionContext.senderPublicKey
-              )
-            : unencryptedResponse;
+					const unencryptedResponse = { shares: { device, auth }, signerId };
+					const response = isEncrypted
+						? await generateEncryptedResponse(
+								unencryptedResponse,
+								(rest as { encryptionContext: { senderPublicKey: string } })
+									.encryptionContext.senderPublicKey,
+							)
+						: unencryptedResponse;
 
-          const res = Response.json(response);
+					const res = Response.json(response);
 
-          res.headers.set("Access-Control-Allow-Origin", "*");
-          res.headers.set(
-            "Access-Control-Allow-Methods",
-            "GET, POST, PUT, DELETE, OPTIONS"
-          );
-          return res;
-        } catch (error) {
-          return handleError(error, "POST /requests/:requestId/auth");
-        }
-      },
-    },
-    "/attestation": {
-      async GET(req) {
-        const pubKeyBuffer = await encryptionService.getPublicKey();
-        const pubKeyBase64 = Buffer.from(pubKeyBuffer).toString("base64");
-        return Response.json({
-          publicKey: pubKeyBase64,
-        });
-      },
-    },
-  },
-  development: true,
+					res.headers.set("Access-Control-Allow-Origin", "*");
+					res.headers.set(
+						"Access-Control-Allow-Methods",
+						"GET, POST, PUT, DELETE, OPTIONS",
+					);
+					return res;
+				} catch (error) {
+					return handleError(error, "POST /requests/:requestId/auth");
+				}
+			},
+		},
+		"/attestation": {
+			async GET(req) {
+				const pubKeyBuffer = await encryptionService.getPublicKey();
+				const pubKeyBase64 = Buffer.from(pubKeyBuffer).toString("base64");
+				return Response.json({
+					publicKey: pubKeyBase64,
+				});
+			},
+		},
+	},
+	development: true,
 });
 
 console.log(`Listening on http://localhost:${server.port} ...`);
