@@ -265,6 +265,11 @@ const server = Bun.serve({
 				return res;
 			},
 		},
+		"/health": {
+			async GET(req) {
+				return Response.json({ status: "ok" });
+			},
+		},
 	},
 	development: true,
 });
