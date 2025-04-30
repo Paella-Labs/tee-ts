@@ -4,6 +4,7 @@
     "": {
       "name": "tee-ts",
       "dependencies": {
+        "@hpke/core": "^1.7.2",
         "@sendgrid/mail": "8.1.5",
         "@solana/web3.js": "^1.98.2",
         "shamir-secret-sharing": "0.0.4",
@@ -38,6 +39,10 @@
     "@biomejs/cli-win32-arm64": ["@biomejs/cli-win32-arm64@1.9.4", "", { "os": "win32", "cpu": "arm64" }, "sha512-tlbhLk+WXZmgwoIKwHIHEBZUwxml7bRJgk0X2sPyNR3S93cdRq6XulAZRQJ17FYGGzWne0fgrXBKpl7l4M87Hg=="],
 
     "@biomejs/cli-win32-x64": ["@biomejs/cli-win32-x64@1.9.4", "", { "os": "win32", "cpu": "x64" }, "sha512-8Y5wMhVIPaWe6jw2H+KlEm4wP/f7EW3810ZLmDlrEEy5KvBsb9ECEfu/kMWD484ijfQ8+nIi0giMgu9g1UAuuA=="],
+
+    "@hpke/common": ["@hpke/common@1.7.2", "", {}, "sha512-x8wGc1S3ANyQpbTXxhDuzQwzZn9IDaOARpEq/QzDyWFBEhOFyN8mJd6oMnvFkxe0H96JFgIU6eI4G2aaNxgFJQ=="],
+
+    "@hpke/core": ["@hpke/core@1.7.2", "", { "dependencies": { "@hpke/common": "^1.7.2" } }, "sha512-WPsy/Wp1oF+47EVfQdXG55TGS+rOKAAZJ4W/4BFnTENGGq/EAJeX1h0ooCarkqWrJsREsrpa4EiIZkz1m8hMOA=="],
 
     "@noble/curves": ["@noble/curves@1.9.0", "", { "dependencies": { "@noble/hashes": "1.8.0" } }, "sha512-7YDlXiNMdO1YZeH6t/kvopHHbIZzlxrCV9WLqCY6QhcXOoXiNCMDqJIglZ9Yjx5+w7Dz30TITFrlTjnRg7sKEg=="],
 

@@ -16,6 +16,7 @@
 		"typescript": "^5"
 	},
 	"dependencies": {
+		"@hpke/core": "^1.7.2",
 		"@sendgrid/mail": "8.1.5",
 		"@solana/web3.js": "^1.98.2",
 		"shamir-secret-sharing": "0.0.4",

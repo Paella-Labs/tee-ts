@@ -1,13 +1,20 @@
 import { SignerService } from "./service";
+import { EncryptionService } from "./encryption";
+
 import {
 	ENVSchema,
 	OTPVerificationSchema,
 	SignerPreGenerationSchema,
 	SignerRequestSchema,
 } from "./schema";
-import type { z } from "zod";
+import { z } from "zod";
 
 const env = ENVSchema.parse(process.env);
+
+// Initialize encryption service singleton
+const encryptionService = EncryptionService.getInstance();
+await encryptionService.init();
+console.log("Encryption service initialized successfully");
 
 function validateRequest<T extends z.ZodType>(
 	schema: T,
@@ -34,6 +41,34 @@ function validateRequest<T extends z.ZodType>(
 	}
 
 	return validationResult.data;
+}
+
+const EncryptedRequestSchema = z.object({
+	ciphertext: z.string(),
+	encapsulatedKey: z.string(),
+});
+
+// Response type defintiion
+type UnencryptedOtpResponse = {
+	shares: {
+		device: string;
+		auth: string;
+	};
+};
+// We also return, alongside the encrypted response, the Auth share (unencrypted), so the crossmint middleware can store it
+type EncryptedOtpResponse = z.infer<typeof EncryptedRequestSchema> & {
+	shares: {
+		auth: string;
+	};
+};
+type OtpResponse = UnencryptedOtpResponse | EncryptedOtpResponse;
+
+function isEncryptedRequest(
+	data: unknown,
+): data is z.infer<typeof EncryptedRequestSchema> {
+	const validationResult = EncryptedRequestSchema.safeParse(data);
+
+	return validationResult.success;
 }
 
 function handleError(error: unknown, logPrefix = ""): Response {
@@ -73,6 +108,13 @@ const signerService = new SignerService(
 	env.SENDGRID_API_KEY,
 	env.MOCK_TEE_SECRET,
 );
+
+async function generateEncryptedResponse<T extends z.ZodType>(
+	data: z.infer<T>,
+	receiverPublicKey: string,
+) {
+	return encryptionService.encryptBase64(data, receiverPublicKey);
+}
 
 const server = Bun.serve({
 	port: env.PORT,
@@ -152,20 +194,75 @@ const server = Bun.serve({
 					}
 
 					const body = await req.json();
+					const isEncrypted = isEncryptedRequest(body);
+
+					let unencryptedBody: z.infer<typeof OTPVerificationSchema>;
+					let senderPublicKey: string | null = null;
+
+					if (isEncrypted) {
+						const decryptedPayload = await encryptionService.decryptBase64<{
+							data: z.infer<typeof OTPVerificationSchema>;
+							encryptionContext: { senderPublicKey: string };
+						}>(body.ciphertext, body.encapsulatedKey);
+						unencryptedBody = decryptedPayload.data;
+						senderPublicKey =
+							decryptedPayload.encryptionContext.senderPublicKey;
+					} else {
+						unencryptedBody = body;
+					}
+					console.log("Unencrypted payload", unencryptedBody);
 					const { otp } = validateRequest(
 						OTPVerificationSchema,
-						body,
-						"[DEBUG] POST /requests/auth",
+						unencryptedBody,
+						"[DEBUG] /signers/:deviceId/auth",
 					);
 
-					const { device, auth, signerId } =
-						await signerService.completeSignerCreation(deviceId, otp);
+					const { device, auth } = await signerService.completeSignerCreation(
+						deviceId,
+						otp,
+					);
 
-					const res = Response.json({ shares: { device, auth }, signerId });
+					const unencryptedResponse = { shares: { device, auth } };
+
+					let response: EncryptedOtpResponse | OtpResponse;
+					if (isEncrypted) {
+						const encryptedResponse = await generateEncryptedResponse(
+							unencryptedResponse,
+							senderPublicKey as NonNullable<typeof senderPublicKey>,
+						);
+						response = {
+							...encryptedResponse,
+							shares: {
+								auth: unencryptedResponse.shares.auth,
+							},
+						};
+					} else {
+						response = unencryptedResponse;
+					}
+
+					const res = Response.json(response);
+
+					res.headers.set("Access-Control-Allow-Origin", "*"); // TODO: restrict to xm
+					res.headers.set(
+						"Access-Control-Allow-Methods",
+						"GET, POST, PUT, DELETE, OPTIONS",
+					);
 					return res;
 				} catch (error) {
 					return handleError(error, "POST /requests/:requestId/auth");
 				}
+			},
+		},
+		"/attestation": {
+			async GET(req) {
+				const pubKeyBuffer = await encryptionService.getPublicKey();
+				const pubKeyBase64 = Buffer.from(pubKeyBuffer).toString("base64");
+				const res = Response.json({
+					publicKey: pubKeyBase64,
+				});
+				res.headers.set("Access-Control-Allow-Origin", "*"); // TODO: restrict to iframe
+				res.headers.set("Access-Control-Allow-Methods", "GET, OPTIONS");
+				return res;
 			},
 		},
 	},
