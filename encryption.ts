@@ -14,7 +14,7 @@ export class EncryptionService {
 			kdf: new HkdfSha384(),
 			aead: new Aes256Gcm(),
 		}),
-		private ephemeralKeyPair: CryptoKeyPair | null = null,
+		private TEEInstanceKeyPair: CryptoKeyPair | null = null,
 	) {}
 
 	public static getInstance(): EncryptionService {
@@ -25,15 +25,15 @@ export class EncryptionService {
 	}
 
 	async init() {
-		this.ephemeralKeyPair = await this.suite.kem.generateKeyPair();
+		this.TEEInstanceKeyPair = await this.suite.kem.generateKeyPair();
 	}
 
 	private assertInitialized() {
-		if (!this.ephemeralKeyPair) {
+		if (!this.TEEInstanceKeyPair) {
 			throw new Error("EncryptionService not initialized");
 		}
 		return {
-			ephemeralKeyPair: this.ephemeralKeyPair,
+			ephemeralKeyPair: this.TEEInstanceKeyPair,
 		};
 	}
 
