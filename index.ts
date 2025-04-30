@@ -46,8 +46,22 @@ function validateRequest<T extends z.ZodType>(
 const EncryptedRequestSchema = z.object({
 	ciphertext: z.string(),
 	encapsulatedKey: z.string(),
-	publicKey: z.string(),
 });
+
+// Response type defintiion
+type UnencryptedOtpResponse = {
+	shares: {
+		device: string;
+		auth: string;
+	};
+};
+// We also return, alongside the encrypted response, the Auth share (unencrypted), so the crossmint middleware can store it
+type EncryptedOtpResponse = z.infer<typeof EncryptedRequestSchema> & {
+	shares: {
+		auth: string;
+	};
+};
+type OtpResponse = UnencryptedOtpResponse | EncryptedOtpResponse;
 
 function isEncryptedRequest(
 	data: unknown,
@@ -169,21 +183,6 @@ const server = Bun.serve({
 
 		"/signers/:deviceId/auth": {
 			async POST(req) {
-				// Response type defintiion
-				type UnencryptedOtpResponse = {
-					shares: {
-						device: string;
-						auth: string;
-					};
-				};
-				// We also return, alongside the encrypted response, the Auth share (unencrypted), so the crossmint middleware can store it
-				type EncryptedOtpResponse = z.infer<typeof EncryptedRequestSchema> & {
-					shares: {
-						auth: string;
-					};
-				};
-				type OtpResponse = UnencryptedOtpResponse | EncryptedOtpResponse;
-
 				try {
 					authenticate(req);
 					const { deviceId } = req.params;
@@ -243,7 +242,7 @@ const server = Bun.serve({
 
 					const res = Response.json(response);
 
-					res.headers.set("Access-Control-Allow-Origin", "*");
+					res.headers.set("Access-Control-Allow-Origin", "*"); // TODO: restrict to xm
 					res.headers.set(
 						"Access-Control-Allow-Methods",
 						"GET, POST, PUT, DELETE, OPTIONS",
@@ -261,7 +260,7 @@ const server = Bun.serve({
 				const res = Response.json({
 					publicKey: pubKeyBase64,
 				});
-				res.headers.set("Access-Control-Allow-Origin", "*");
+				res.headers.set("Access-Control-Allow-Origin", "*"); // TODO: restrict to iframe
 				res.headers.set("Access-Control-Allow-Methods", "GET, OPTIONS");
 				return res;
 			},

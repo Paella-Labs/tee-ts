@@ -50,6 +50,7 @@ export class EncryptionService {
 			ephemeralKeyPair.publicKey,
 		);
 		const senderContextPromise = this.suite.createSenderContext({
+			senderKey: ephemeralKeyPair,
 			recipientPublicKey:
 				await this.suite.kem.deserializePublicKey(receiverPublicKey),
 		});
