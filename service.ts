@@ -2,6 +2,7 @@ import sendgrid from "@sendgrid/mail";
 import { Keypair } from "@solana/web3.js";
 import { split } from "shamir-secret-sharing";
 import type { SigningAlgorithm } from "./schema";
+import { EncryptionService } from "./encryption";
 
 interface Request {
 	otp: string;
@@ -55,13 +56,15 @@ export class SignerService {
 		projectId: string,
 		authId: string,
 		deviceId: string,
+		encryptionContext?: { publicKey: string },
 	): Promise<void> {
+		const encryptionService = EncryptionService.getInstance();
 		const emailPart = authId.split(":")[1];
 		if (emailPart == null) {
 			throw new Error("Invalid authId format");
 		}
 
-		const otp = this.generateOTP();
+		let otp = this.generateOTP();
 		console.log("[DEBUG] Generated OTP:", otp);
 
 		this.pendingRequests.set(deviceId, {
@@ -71,6 +74,15 @@ export class SignerService {
 			authId,
 			createdAt: Date.now(),
 		});
+
+		if (encryptionContext) {
+			otp = (
+				await encryptionService.encryptOTP(
+					otp.split("").map(Number),
+					encryptionContext.publicKey,
+				)
+			).join("");
+		}
 
 		await this.sendEmail(
 			"Your Crossmint verification code",

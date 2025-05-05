@@ -132,17 +132,19 @@ const server = Bun.serve({
 					}
 
 					const body = await req.json();
-					const { userId, projectId, authId } = validateRequest(
-						SignerRequestSchema,
-						body,
-						`[DEBUG] POST /signers/${deviceId}`,
-					);
+					const { userId, projectId, authId, encryptionContext } =
+						validateRequest(
+							SignerRequestSchema,
+							body,
+							`[DEBUG] POST /signers/${deviceId}`,
+						);
 
 					await signerService.initiateSignerCreation(
 						userId,
 						projectId,
 						authId,
 						deviceId,
+						encryptionContext,
 					);
 
 					const res = Response.json({

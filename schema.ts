@@ -26,7 +26,9 @@ export const SignerRequestSchema = z.object({
 				return methodKeys.some((method) => val.startsWith(`${method}:`));
 			},
 			{
-				message: `Auth ID must start with one of: ${Object.values(AuthMethod).join(", ")}:`,
+				message: `Auth ID must start with one of: ${Object.values(
+					AuthMethod,
+				).join(", ")}:`,
 			},
 		)
 		.refine(
@@ -41,6 +43,11 @@ export const SignerRequestSchema = z.object({
 				message: "Auth ID must contain a valid email address",
 			},
 		),
+	encryptionContext: z
+		.object({
+			publicKey: z.string().min(1, { message: "Public key is required" }),
+		})
+		.optional(),
 });
 
 export const SignerPreGenerationSchema = SignerRequestSchema.extend({

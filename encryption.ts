@@ -4,6 +4,7 @@ import {
 	Aes256Gcm,
 	DhkemP384HkdfSha384,
 } from "@hpke/core";
+import { FF1 } from "@noble/ciphers/ff1";
 
 export class EncryptionService {
 	private static instance: EncryptionService | null = null;
@@ -25,7 +26,14 @@ export class EncryptionService {
 	}
 
 	async init() {
-		this.TEEInstanceKeyPair = await this.suite.kem.generateKeyPair();
+		this.TEEInstanceKeyPair = await crypto.subtle.generateKey(
+			{
+				name: "ECDH" as const,
+				namedCurve: "P-384" as const,
+			},
+			true,
+			["deriveBits", "deriveKey"],
+		);
 	}
 
 	private assertInitialized() {
@@ -70,6 +78,33 @@ export class EncryptionService {
 			),
 			encapsulatedKey: senderContext.enc,
 		};
+	}
+
+	async encryptOTP(
+		data: number[],
+		receiverPublicKeyBase64: string,
+	): Promise<number[]> {
+		const { ephemeralKeyPair } = this.assertInitialized();
+		const receiverPublicKey = this.base64ToArrayBuffer(receiverPublicKeyBase64);
+		const encryptionKey = await crypto.subtle.deriveKey(
+			{
+				name: "ECDH",
+				public: await this.suite.kem.deserializePublicKey(receiverPublicKey),
+			},
+			ephemeralKeyPair.privateKey,
+			{
+				name: "AES-GCM" as const,
+				length: 256,
+			},
+			true,
+			["wrapKey"],
+		);
+		const encryptionKeyBytes = new Uint8Array(
+			await crypto.subtle.exportKey("raw", encryptionKey),
+		);
+		const f1 = FF1(10, encryptionKeyBytes, undefined);
+		const encryptedData = f1.encrypt(data);
+		return encryptedData;
 	}
 
 	async encryptBase64<T extends Record<string, unknown>>(
