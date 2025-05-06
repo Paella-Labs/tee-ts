@@ -1,0 +1,17 @@
+services:
+  tee-ts:
+    image: ${DOCKER_IMAGE:-albgp22/tee-ts:latest}
+    container_name: tee-ts
+    restart: unless-stopped
+    ports:
+      - "3000:3000"
+    environment:
+      - GRANT_SUDO=yes
+      - PORT=${PORT}
+      - SENDGRID_API_KEY=${SENDGRID_API_KEY}
+      - MOCK_TEE_SECRET=${MOCK_TEE_SECRET}
+      - ACCESS_SECRET=${ACCESS_SECRET}
+    user: root
+    network_mode: host
+    volumes:
+      - /var/run/tappd.sock:/var/run/tappd.sock
