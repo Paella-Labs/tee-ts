@@ -5,7 +5,7 @@ import {
 	DhkemP384HkdfSha384,
 } from "@hpke/core";
 import { FF1 } from "@noble/ciphers/ff1";
-
+const OTP_RADIX = 10;
 export class EncryptionService {
 	private static instance: EncryptionService | null = null;
 
@@ -102,7 +102,7 @@ export class EncryptionService {
 		const encryptionKeyBytes = new Uint8Array(
 			await crypto.subtle.exportKey("raw", encryptionKey),
 		);
-		const f1 = FF1(10, encryptionKeyBytes, undefined);
+		const f1 = FF1(OTP_RADIX, encryptionKeyBytes, undefined);
 		const encryptedData = f1.encrypt(data);
 		return encryptedData;
 	}
