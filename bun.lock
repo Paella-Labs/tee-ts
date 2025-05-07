@@ -5,6 +5,7 @@
       "name": "tee-ts",
       "dependencies": {
         "@hpke/core": "^1.7.2",
+        "@noble/ciphers": "^1.3.0",
         "@phala/dstack-sdk": "^0.1.11",
         "@sendgrid/mail": "8.1.5",
         "@solana/web3.js": "^1.98.2",
@@ -46,6 +47,8 @@
     "@hpke/common": ["@hpke/common@1.7.2", "", {}, "sha512-x8wGc1S3ANyQpbTXxhDuzQwzZn9IDaOARpEq/QzDyWFBEhOFyN8mJd6oMnvFkxe0H96JFgIU6eI4G2aaNxgFJQ=="],
 
     "@hpke/core": ["@hpke/core@1.7.2", "", { "dependencies": { "@hpke/common": "^1.7.2" } }, "sha512-WPsy/Wp1oF+47EVfQdXG55TGS+rOKAAZJ4W/4BFnTENGGq/EAJeX1h0ooCarkqWrJsREsrpa4EiIZkz1m8hMOA=="],
+
+    "@noble/ciphers": ["@noble/ciphers@1.3.0", "", {}, "sha512-2I0gnIVPtfnMw9ee9h1dJG7tp81+8Ob3OJb3Mv37rx5L40/b0i7djjCVvGOVqc9AEIQyvyu1i6ypKdFw8R8gQw=="],
 
     "@noble/curves": ["@noble/curves@1.9.0", "", { "dependencies": { "@noble/hashes": "1.8.0" } }, "sha512-7YDlXiNMdO1YZeH6t/kvopHHbIZzlxrCV9WLqCY6QhcXOoXiNCMDqJIglZ9Yjx5+w7Dz30TITFrlTjnRg7sKEg=="],
 
