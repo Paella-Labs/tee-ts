@@ -8,6 +8,7 @@ import {
 	SignerRequestSchema,
 } from "./schema";
 import { z } from "zod";
+import { TappdClient } from "@phala/dstack-sdk";
 
 const env = ENVSchema.parse(process.env);
 
@@ -119,6 +120,13 @@ async function generateEncryptedResponse<T extends z.ZodType>(
 const server = Bun.serve({
 	port: env.PORT,
 	routes: {
+		"/health": {
+			async GET() {
+				return new Response(JSON.stringify({ status: "healthy" }), {
+					headers: { "Content-Type": "application/json" },
+				});
+			},
+		},
 		"/signers/:deviceId": {
 			async POST(req) {
 				try {
@@ -266,6 +274,12 @@ const server = Bun.serve({
 				res.headers.set("Access-Control-Allow-Methods", "GET, OPTIONS");
 				return res;
 			},
+		},
+
+		"/attestation/tdx_quote": async (req) => {
+			const client = new TappdClient();
+			const result = await client.tdxQuote("test");
+			return new Response(JSON.stringify(result));
 		},
 	},
 	development: true,

@@ -1,0 +1,65 @@
+services:
+  tee-ts:
+    image: ${DOCKER_IMAGE:-albgp22/tee-ts:latest}
+    container_name: tee-ts
+    restart: unless-stopped
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "wget",
+          "--no-verbose",
+          "--tries=1",
+          "--spider",
+          "http://localhost/health",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    environment:
+      - GRANT_SUDO=yes
+      - PORT=3000
+      - SENDGRID_API_KEY=${SENDGRID_API_KEY}
+      - MOCK_TEE_SECRET=${MOCK_TEE_SECRET}
+      - ACCESS_SECRET=${ACCESS_SECRET}
+    user: root
+    volumes:
+      - /var/run/tappd.sock:/var/run/tappd.sock
+    networks:
+      - tee-ts-network
+
+  nginx:
+    image: ${NGINX_DOCKER_IMAGE:-albgp22/tee-ts-nginx:latest}
+    container_name: nginx-proxy
+    restart: unless-stopped
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "wget",
+          "--no-verbose",
+          "--tries=1",
+          "--spider",
+          "http://localhost/health",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      - SSL_CERTIFICATE=${SSL_CERTIFICATE}
+      - SSL_CERTIFICATE_KEY=${SSL_CERTIFICATE_KEY}
+    volumes:
+      - /var/run/tappd.sock:/var/run/tappd.sock
+    depends_on:
+      - tee-ts
+    networks:
+      - tee-ts-network
+
+networks:
+  tee-ts-network:
+    driver: bridge
