@@ -11,6 +11,7 @@ ENV_FILE=".env"
 COMPOSE_FILE="docker-compose.yml"
 IMAGE="dstack-dev-0.3.5"
 DOCKER_IMAGE="albgp22/tee-ts:latest"
+NGINX_DOCKER_IMAGE="albgp22/tee-ts-nginx:latest"
 SKIP_BUILD=false
 
 print_usage() {
@@ -28,6 +29,7 @@ print_usage() {
     echo "  --env-file PATH    Path to env file (default: $ENV_FILE)"
     echo "  --image VALUE      Phala image to use (default: $IMAGE)"
     echo "  --docker-image VALUE Docker image name (default: $DOCKER_IMAGE)"
+    echo "  --nginx-image VALUE Nginx Docker image name (default: $NGINX_DOCKER_IMAGE)"
     echo "  --skip-build       Skip Docker image building step"
     echo "  --help             Display this help message"
     exit 1
@@ -74,15 +76,23 @@ build_image() {
         return
     fi
 
-    echo "Building Docker image: $DOCKER_IMAGE"
+    echo "Building tee-ts Docker image: $DOCKER_IMAGE"
     docker buildx build --platform linux/amd64,linux/arm64 . -t "$DOCKER_IMAGE" --push
 
     if [ $? -ne 0 ]; then
-        echo "Error: Docker build failed."
+        echo "Error: tee-ts Docker build failed."
         exit 1
     fi
 
-    echo "✅ Docker image built and pushed successfully!"
+    echo "Building nginx Docker image: $NGINX_DOCKER_IMAGE"
+    docker buildx build --platform linux/amd64,linux/arm64 -f nginx.Dockerfile . -t "$NGINX_DOCKER_IMAGE" --push
+
+    if [ $? -ne 0 ]; then
+        echo "Error: nginx Docker build failed."
+        exit 1
+    fi
+
+    echo "✅ Docker images built and pushed successfully!"
 }
 
 deploy() {
@@ -90,6 +100,7 @@ deploy() {
 
     echo "Deploying TEE-TS to Phala..."
     export DOCKER_IMAGE="$DOCKER_IMAGE"
+    export NGINX_DOCKER_IMAGE="$NGINX_DOCKER_IMAGE"
     $PHALA_CMD cvms create \
         --vcpu "$VCPU" \
         --memory "$MEMORY" \
@@ -156,6 +167,10 @@ main() {
                 ;;
             --docker-image)
                 DOCKER_IMAGE="$2"
+                shift 2
+                ;;
+            --nginx-image)
+                NGINX_DOCKER_IMAGE="$2"
                 shift 2
                 ;;
             --skip-build)
