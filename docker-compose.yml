@@ -3,11 +3,9 @@ services:
     image: ${DOCKER_IMAGE:-albgp22/tee-ts:latest}
     container_name: tee-ts
     restart: unless-stopped
-    ports:
-      - "3000:3000"
     environment:
       - GRANT_SUDO=yes
-      - PORT=${PORT}
+      - PORT=3000
       - SENDGRID_API_KEY=${SENDGRID_API_KEY}
       - MOCK_TEE_SECRET=${MOCK_TEE_SECRET}
       - ACCESS_SECRET=${ACCESS_SECRET}
@@ -15,3 +13,22 @@ services:
     network_mode: host
     volumes:
       - /var/run/tappd.sock:/var/run/tappd.sock
+
+  nginx:
+    image: nginx:alpine
+    container_name: nginx-proxy
+    restart: unless-stopped
+    ports:
+      - "80:80"
+      - "443:443"
+    environment:
+      - SSL_CERTIFICATE=${SSL_CERTIFICATE}
+      - SSL_CERTIFICATE_KEY=${SSL_CERTIFICATE_KEY}
+    volumes:
+      - /var/run/tappd.sock:/var/run/tappd.sock
+      - ./nginx.conf:/etc/nginx/nginx.conf:ro
+      - ./docker-entrypoint.sh:/docker-entrypoint.sh:ro
+    entrypoint: ["/docker-entrypoint.sh"]
+    command: ["nginx", "-g", "daemon off;"]
+    depends_on:
+      - tee-ts
