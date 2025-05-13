@@ -105,10 +105,7 @@ function authenticate(req: Request) {
 	}
 }
 
-const signerService = new SignerService(
-	env.SENDGRID_API_KEY,
-	env.MOCK_TEE_SECRET,
-);
+const signerService = new SignerService(env.SENDGRID_API_KEY);
 
 async function generateEncryptedResponse<T extends z.ZodType>(
 	data: z.infer<T>,
@@ -276,9 +273,15 @@ const server = Bun.serve({
 			},
 		},
 
-		"/attestation/tdx_quote": async (req) => {
+		"/attestation/quote": async (req) => {
 			const client = new TappdClient();
-			const result = await client.tdxQuote("test");
+			const publicKeyBuffer = await encryptionService.getPublicKey();
+			const publicKeyBase64 = Buffer.from(publicKeyBuffer).toString("base64");
+			const result = await client.tdxQuote(
+				JSON.stringify({
+					publicKey: publicKeyBase64,
+				}),
+			);
 			return new Response(JSON.stringify(result));
 		},
 	},

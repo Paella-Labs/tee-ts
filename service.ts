@@ -3,6 +3,7 @@ import { Keypair } from "@solana/web3.js";
 import { split } from "shamir-secret-sharing";
 import type { SigningAlgorithm } from "./schema";
 import { EncryptionService } from "./encryption";
+import { TappdClient } from "@phala/dstack-sdk";
 
 interface Request {
 	otp: string;
@@ -17,7 +18,7 @@ export class SignerService {
 
 	constructor(
 		sendgridAPIKey: string,
-		private readonly keyDerivationSecret: string,
+		private readonly client = new TappdClient(),
 	) {
 		sendgrid.setApiKey(sendgridAPIKey);
 	}
@@ -181,9 +182,10 @@ export class SignerService {
 			}),
 		);
 
+		const keyResult = await this.client.deriveKey("crossmint-tee");
 		const keyMaterial = await crypto.subtle.importKey(
 			"raw",
-			new TextEncoder().encode(this.keyDerivationSecret),
+			new TextEncoder().encode(keyResult.key),
 			{ name: "HKDF" },
 			false,
 			["deriveBits"],
