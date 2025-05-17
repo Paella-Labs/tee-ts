@@ -97,7 +97,7 @@ export class SignerService {
 	public async completeSignerCreation(
 		deviceId: string,
 		otp: string,
-	): Promise<{ device: string; auth: string; signerId: string }> {
+	): Promise<{ device: string; auth: string; deviceKeyShareHash: string }> {
 		// Retrieve request from storage
 		const request = this.pendingRequests.get(deviceId);
 		if (!request) {
@@ -134,8 +134,8 @@ export class SignerService {
 		return {
 			device: Buffer.from(device).toString("base64"),
 			auth: Buffer.from(auth).toString("base64"),
-			signerId: Buffer.from(
-				await crypto.subtle.digest("SHA-256", masterSecret),
+			deviceKeyShareHash: Buffer.from(
+				await crypto.subtle.digest("SHA-256", device),
 			).toString("base64"),
 		};
 	}
