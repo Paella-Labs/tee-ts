@@ -220,7 +220,8 @@ const server = Bun.serve({
 					} else {
 						unencryptedBody = body;
 					}
-
+					
+					console.log("Unencrypted payload", unencryptedBody);	
 					const { otp } = validateRequest(
 						OTPVerificationSchema,
 						unencryptedBody,
