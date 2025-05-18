@@ -49,21 +49,21 @@ const EncryptedRequestSchema = z.object({
 	encapsulatedKey: z.string(),
 });
 
-// Response type defintiion
-type EncryptedOtpResponse = {
+// Response type definition
+type UnencryptedOtpResponse = {
 	shares: {
 		device: string;
 		auth: string;
 	};
 };
 // We also return, alongside the encrypted response, the Auth share (unencrypted), so the crossmint middleware can store it
-type PlaintextOtpResponse = z.infer<typeof EncryptedRequestSchema> & {
+type EncryptedOtpResponse = z.infer<typeof EncryptedRequestSchema> & {
 	shares: {
 		auth: string;
 	};
 	deviceKeyShareHash: string;
 };
-type OtpResponse = EncryptedOtpResponse | PlaintextOtpResponse;
+type OtpResponse = UnencryptedOtpResponse | EncryptedOtpResponse;
 
 function isEncryptedRequest(
 	data: unknown,
@@ -220,8 +220,8 @@ const server = Bun.serve({
 					} else {
 						unencryptedBody = body;
 					}
-					
 					console.log("Unencrypted payload", unencryptedBody);	
+					
 					const { otp } = validateRequest(
 						OTPVerificationSchema,
 						unencryptedBody,
@@ -235,7 +235,7 @@ const server = Bun.serve({
 						shares: { device, auth },
 					};
 
-					let response: PlaintextOtpResponse | OtpResponse;
+					let response: EncryptedOtpResponse | OtpResponse;
 					if (isEncrypted) {
 						const encryptedResponse = await generateEncryptedResponse(
 							unencryptedResponse,
