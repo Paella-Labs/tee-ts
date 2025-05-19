@@ -17,6 +17,7 @@ export class SignerService {
 
 	constructor(
 		sendgridAPIKey: string,
+		private readonly sendgridEmailTemplateId: string,
 		private readonly keyDerivationSecret: string,
 	) {
 		sendgrid.setApiKey(sendgridAPIKey);
@@ -54,13 +55,15 @@ export class SignerService {
 	public async initiateSignerCreation(
 		userId: string,
 		projectId: string,
+		projectName: string,
 		authId: string,
 		deviceId: string,
+		projectLogo?: string,
 		encryptionContext?: { publicKey: string },
 	): Promise<void> {
 		const encryptionService = EncryptionService.getInstance();
-		const emailPart = authId.split(":")[1];
-		if (emailPart == null) {
+		const recipient = authId.split(":")[1];
+		if (recipient == null) {
 			throw new Error("Invalid authId format");
 		}
 
@@ -84,11 +87,7 @@ export class SignerService {
 			).join("");
 		}
 
-		await this.sendEmail(
-			"Your Crossmint verification code",
-			`Your verification code is: ${otp}`,
-			emailPart,
-		);
+		await this.sendEmail(otp, recipient, projectName, projectLogo);
 	}
 
 	/**
@@ -140,22 +139,26 @@ export class SignerService {
 		};
 	}
 
-	private async sendEmail(
-		subject: string,
-		body: string,
-		recipient: string,
-	): Promise<void> {
-		const msg = {
+	private async sendEmail(otp: string, recipient: string, projectName: string, projectLogo?: string): Promise<void> {
+		const sendGridData = {
 			to: recipient,
 			from: "hello@crossmint.io",
-			subject: subject,
-			text: body,
-			html: `<div>${body}</div>`,
-		};
+			templateId: this.sendgridEmailTemplateId,
+			dynamicTemplateData: {
+				otp_code: otp,
+				otp_code_expiration_minutes: "10 minutes",
+				user: {
+					trusted_metadata: {
+						project_name: projectName,
+						project_logo: projectLogo,
+					},
+				},
+			},
+		}
 		console.log("[DEBUG] Attempting to send email to:", recipient);
-		console.log(msg);
+		console.log(sendGridData);
 
-		await sendgrid.send(msg);
+		await sendgrid.send(sendGridData)
 	}
 
 	private generateOTP(): string {

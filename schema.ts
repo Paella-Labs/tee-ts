@@ -17,6 +17,8 @@ export type SigningAlgorithm =
 export const SignerRequestSchema = z.object({
 	userId: z.string().min(1, { message: "User ID is required" }),
 	projectId: z.string().min(1, { message: "Project ID is required" }),
+	projectName: z.string().min(1, { message: "Project name is required" }),
+	projectLogo: z.string().optional(),
 	authId: z
 		.string()
 		.min(1, { message: "Auth ID is required" })
@@ -62,6 +64,9 @@ export const ENVSchema = z.object({
 	SENDGRID_API_KEY: z
 		.string()
 		.min(1, { message: "SendGrid API key is required" }),
+	SENDGRID_EMAIL_TEMPLATE_ID: z
+		.string()
+		.min(1, { message: "SendGrid email template ID is required" }),
 	MOCK_TEE_SECRET: z
 		.string()
 		.min(1, { message: "MOCK_TEE_SECRET is required" }),

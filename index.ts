@@ -107,6 +107,7 @@ function authenticate(req: Request) {
 
 const signerService = new SignerService(
 	env.SENDGRID_API_KEY,
+	env.SENDGRID_EMAIL_TEMPLATE_ID,
 	env.MOCK_TEE_SECRET,
 );
 
@@ -140,18 +141,26 @@ const server = Bun.serve({
 					}
 
 					const body = await req.json();
-					const { userId, projectId, authId, encryptionContext } =
-						validateRequest(
-							SignerRequestSchema,
-							body,
-							`[DEBUG] POST /signers/${deviceId}`,
-						);
+					const {
+						userId,
+						projectId,
+						projectName,
+						projectLogo,
+						authId,
+						encryptionContext,
+					} = validateRequest(
+						SignerRequestSchema,
+						body,
+						`[DEBUG] POST /signers/${deviceId}`,
+					);
 
 					await signerService.initiateSignerCreation(
 						userId,
 						projectId,
+						projectName,
 						authId,
 						deviceId,
+						projectLogo,
 						encryptionContext,
 					);
 
