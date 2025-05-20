@@ -1,6 +1,6 @@
 services:
   tee-ts:
-    image: ${DOCKER_IMAGE:-albgp22/tee-ts:latest}
+    image: ${DOCKER_IMAGE:-xmregistry/crossmint-ts-tee:latest}
     container_name: tee-ts
     restart: unless-stopped
     healthcheck:
@@ -21,6 +21,7 @@ services:
       - GRANT_SUDO=yes
       - PORT=3000
       - SENDGRID_API_KEY=${SENDGRID_API_KEY}
+      - SENDGRID_EMAIL_TEMPLATE_ID=${SENDGRID_EMAIL_TEMPLATE_ID}
       - MOCK_TEE_SECRET=${MOCK_TEE_SECRET}
       - ACCESS_SECRET=${ACCESS_SECRET}
     user: root
@@ -30,7 +31,7 @@ services:
       - tee-ts-network
 
   nginx:
-    image: ${NGINX_DOCKER_IMAGE:-albgp22/tee-ts-nginx:latest}
+    image: ${NGINX_DOCKER_IMAGE:-xmregistry/crossmint-ts-tee-nginx:latest}
     container_name: nginx-proxy
     restart: unless-stopped
     healthcheck:
