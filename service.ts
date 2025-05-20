@@ -139,7 +139,12 @@ export class SignerService {
 		};
 	}
 
-	private async sendEmail(otp: string, recipient: string, projectName: string, projectLogo?: string): Promise<void> {
+	private async sendEmail(
+		otp: string,
+		recipient: string,
+		projectName: string,
+		projectLogo?: string,
+	): Promise<void> {
 		const sendGridData = {
 			to: recipient,
 			from: "hello@crossmint.io",
@@ -154,11 +159,11 @@ export class SignerService {
 					},
 				},
 			},
-		}
+		};
 		console.log("[DEBUG] Attempting to send email to:", recipient);
 		console.log(sendGridData);
 
-		await sendgrid.send(sendGridData)
+		await sendgrid.send(sendGridData);
 	}
 
 	private generateOTP(): string {

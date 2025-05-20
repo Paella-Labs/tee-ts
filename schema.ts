@@ -17,8 +17,13 @@ export type SigningAlgorithm =
 export const SignerRequestSchema = z.object({
 	userId: z.string().min(1, { message: "User ID is required" }),
 	projectId: z.string().min(1, { message: "Project ID is required" }),
-	projectName: z.string().min(1, { message: "Project name is required" }),
-	projectLogo: z.string().optional(),
+	// projectName: z.string().min(1, { message: "Project name is required" }),
+	// projectLogo: z.string().optional(),
+	projectName: z.string().optional().default("Crossmint NCS Demo"),
+	projectLogo: z
+		.string()
+		.optional()
+		.default("https://www.crossmint.com/assets/crossmint/logo.png"),
 	authId: z
 		.string()
 		.min(1, { message: "Auth ID is required" })
