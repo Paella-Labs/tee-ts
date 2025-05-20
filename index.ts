@@ -49,7 +49,7 @@ const EncryptedRequestSchema = z.object({
 	encapsulatedKey: z.string(),
 });
 
-// Response type defintiion
+// Response type definition
 type UnencryptedOtpResponse = {
 	shares: {
 		device: string;
@@ -61,6 +61,7 @@ type EncryptedOtpResponse = z.infer<typeof EncryptedRequestSchema> & {
 	shares: {
 		auth: string;
 	};
+	deviceKeyShareHash: string;
 };
 type OtpResponse = UnencryptedOtpResponse | EncryptedOtpResponse;
 
@@ -224,24 +225,24 @@ const server = Bun.serve({
 							encryptionContext: { senderPublicKey: string };
 						}>(body.ciphertext, body.encapsulatedKey);
 						unencryptedBody = decryptedPayload.data;
-						senderPublicKey =
-							decryptedPayload.encryptionContext.senderPublicKey;
+						senderPublicKey = decryptedPayload.encryptionContext.senderPublicKey;
 					} else {
 						unencryptedBody = body;
 					}
-					console.log("Unencrypted payload", unencryptedBody);
+					console.log("Unencrypted payload", unencryptedBody);	
+					
 					const { otp } = validateRequest(
 						OTPVerificationSchema,
 						unencryptedBody,
 						"[DEBUG] /signers/:deviceId/auth",
 					);
 
-					const { device, auth } = await signerService.completeSignerCreation(
-						deviceId,
-						otp,
-					);
+					const { device, auth, deviceKeyShareHash } =
+						await signerService.completeSignerCreation(deviceId, otp);
 
-					const unencryptedResponse = { shares: { device, auth } };
+					const unencryptedResponse = {
+						shares: { device, auth },
+					};
 
 					let response: EncryptedOtpResponse | OtpResponse;
 					if (isEncrypted) {
@@ -254,6 +255,7 @@ const server = Bun.serve({
 							shares: {
 								auth: unencryptedResponse.shares.auth,
 							},
+							deviceKeyShareHash,
 						};
 					} else {
 						response = unencryptedResponse;
