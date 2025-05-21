@@ -28,10 +28,10 @@ contract CrossmintAppAuth is
     mapping(bytes32 => bool) public allowedDeviceIds;
 
     // Events
-    event ComposeHashAdded(bytes32 composeHash);
+    event ComposeHashAdded(bytes32 composeHash, string reason);
     event ComposeHashRemoved(bytes32 composeHash);
     event UpgradesDisabled();
-    event DeviceAdded(bytes32 deviceId);
+    event DeviceAdded(bytes32 deviceId, string reason);
     event DeviceRemoved(bytes32 deviceId);
     event AllowAnyDeviceSet(bool allowAny);
 
@@ -62,9 +62,10 @@ contract CrossmintAppAuth is
     }
 
     // Add a compose hash to allowed list
-    function addComposeHash(bytes32 composeHash) external onlyOwner {
+    function addComposeHash(bytes32 composeHash, string calldata reason) external onlyOwner {
+        require(bytes(reason).length > 0, "Reason must be provided");
         allowedComposeHashes[composeHash] = true;
-        emit ComposeHashAdded(composeHash);
+        emit ComposeHashAdded(composeHash, reason);
     }
 
     // Remove a compose hash from allowed list
@@ -80,9 +81,10 @@ contract CrossmintAppAuth is
     }
 
     // Add a device ID to allowed list
-    function addDevice(bytes32 deviceId) external onlyOwner {
+    function addDevice(bytes32 deviceId, string calldata reason) external onlyOwner {
+        require(bytes(reason).length > 0, "Reason must be provided");
         allowedDeviceIds[deviceId] = true;
-        emit DeviceAdded(deviceId);
+        emit DeviceAdded(deviceId, reason);
     }
 
     // Remove a device ID from allowed list

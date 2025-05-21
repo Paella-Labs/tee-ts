@@ -49,8 +49,10 @@ async function main() {
 
   // Test adding a compose hash
   const testComposeHash = ethers.hexlify(ethers.randomBytes(32));
+  const testReason = "Initial test compose hash for development";
   console.log("Adding test compose hash:", testComposeHash);
-  const tx = await appAuthProxy.addComposeHash(testComposeHash);
+  console.log("With reason:", testReason);
+  const tx = await appAuthProxy.addComposeHash(testComposeHash, testReason);
   await tx.wait();
   console.log("Compose hash added. Transaction hash:", tx.hash);
 

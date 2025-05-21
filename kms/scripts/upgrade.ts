@@ -34,10 +34,18 @@ async function main() {
 
   // Test adding a compose hash
   const testComposeHash = ethers.hexlify(ethers.randomBytes(32));
+  const testReason = "Test compose hash added during upgrade process";
   console.log("Adding test compose hash:", testComposeHash);
-  const tx = await appAuth.addComposeHash(testComposeHash);
+  console.log("With reason:", testReason);
+  const tx = await appAuth.addComposeHash(testComposeHash, testReason);
   await tx.wait();
   console.log("Compose hash added. Transaction hash:", tx.hash);
+
+  // Test if the compose hash was added
+  const isComposeHashAllowed = await appAuth.allowedComposeHashes(
+    testComposeHash
+  );
+  console.log("Is test compose hash allowed:", isComposeHashAllowed);
 
   // Prepare for an upgrade with the same contract implementation (for future use)
   console.log("\nThis script demonstrates upgrading to a new implementation.");
@@ -49,12 +57,6 @@ async function main() {
   console.log(
     "3. Use this script to upgrade the deployed proxy to the new implementation"
   );
-
-  // For now, let's just check if contract functions as expected
-  const isComposeHashAllowed = await appAuth.allowedComposeHashes(
-    testComposeHash
-  );
-  console.log("Is test compose hash allowed:", isComposeHashAllowed);
 
   console.log("\nTo verify on Basescan:");
   console.log(
