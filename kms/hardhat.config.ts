@@ -23,21 +23,18 @@ const config: HardhatUserConfig = {
   },
   defaultNetwork: "hardhat",
   networks: {
-    hardhat: {
-      // Specific Hardhat network configurations can go here
-    },
-    // Only include these networks when PRIVATE_KEY is properly set
+    hardhat: {},
     ...(PRIVATE_KEY && PRIVATE_KEY.length >= 64
       ? {
           baseSepolia: {
-            url: BASE_SEPOLIA_RPC_URL || "https://sepolia.base.org", // Fallback public RPC
+            url: BASE_SEPOLIA_RPC_URL,
             accounts: [
               PRIVATE_KEY.startsWith("0x") ? PRIVATE_KEY : `0x${PRIVATE_KEY}`,
             ],
             chainId: 84532,
           },
           baseMainnet: {
-            url: BASE_MAINNET_RPC_URL || "https://mainnet.base.org", // Fallback public RPC
+            url: BASE_MAINNET_RPC_URL,
             accounts: [
               PRIVATE_KEY.startsWith("0x") ? PRIVATE_KEY : `0x${PRIVATE_KEY}`,
             ],
@@ -48,11 +45,10 @@ const config: HardhatUserConfig = {
   },
   etherscan: {
     apiKey: {
-      base: ETHERSCAN_API_KEY || "", // For Base Mainnet
-      baseSepolia: ETHERSCAN_API_KEY || "", // For Base Sepolia
+      base: ETHERSCAN_API_KEY || "",
+      baseSepolia: ETHERSCAN_API_KEY || "",
     },
     customChains: [
-      // Required for Base verification if not natively supported by Hardhat Etherscan plugin yet
       {
         network: "baseSepolia",
         chainId: 84532,
@@ -72,7 +68,6 @@ const config: HardhatUserConfig = {
     ],
   },
   sourcify: {
-    // Optional: for Sourcify verification
     enabled: true,
   },
 };

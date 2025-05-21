@@ -11,19 +11,16 @@ describe("CrossmintAppAuth", () => {
   let appId: string;
 
   beforeEach(async () => {
-    // Get signers
     [owner, user] = await ethers.getSigners();
 
-    // Mock app ID (using a random address)
     appId = "0x1234567890123456789012345678901234567890";
 
-    // Deploy the contract through the proxy
     const CrossmintAppAuthFactory = await ethers.getContractFactory(
       "CrossmintAppAuth"
     );
     crossmintAppAuth = await upgrades.deployProxy(
       CrossmintAppAuthFactory,
-      [owner.address, appId, false, true], // owner, appId, disableUpgrades, allowAnyDevice
+      [owner.address, appId, false, true],
       { kind: "uups" }
     );
 
@@ -55,7 +52,6 @@ describe("CrossmintAppAuth", () => {
       );
       await tx.wait();
 
-      // Check if compose hash is allowed
       expect(
         await crossmintAppAuth.allowedComposeHashes(testComposeHash)
       ).to.equal(true);
@@ -76,7 +72,6 @@ describe("CrossmintAppAuth", () => {
     });
 
     it("should allow owner to remove a compose hash", async () => {
-      // First add the compose hash
       await (
         await crossmintAppAuth.addComposeHash(testComposeHash, testReason)
       ).wait();
@@ -84,11 +79,9 @@ describe("CrossmintAppAuth", () => {
         await crossmintAppAuth.allowedComposeHashes(testComposeHash)
       ).to.equal(true);
 
-      // Then remove it
       const tx = await crossmintAppAuth.removeComposeHash(testComposeHash);
       await tx.wait();
 
-      // Check if compose hash is no longer allowed
       expect(
         await crossmintAppAuth.allowedComposeHashes(testComposeHash)
       ).to.equal(false);
@@ -109,7 +102,6 @@ describe("CrossmintAppAuth", () => {
     const testReason = "Test reason for device";
 
     beforeEach(async () => {
-      // Set allowAnyDevice to false for device testing
       await (await crossmintAppAuth.setAllowAnyDevice(false)).wait();
     });
 
@@ -117,7 +109,6 @@ describe("CrossmintAppAuth", () => {
       const tx = await crossmintAppAuth.addDevice(testDeviceId, testReason);
       await tx.wait();
 
-      // Check if device is allowed
       expect(await crossmintAppAuth.allowedDeviceIds(testDeviceId)).to.equal(
         true
       );
@@ -136,17 +127,14 @@ describe("CrossmintAppAuth", () => {
     });
 
     it("should allow owner to remove a device", async () => {
-      // First add the device
       await (await crossmintAppAuth.addDevice(testDeviceId, testReason)).wait();
       expect(await crossmintAppAuth.allowedDeviceIds(testDeviceId)).to.equal(
         true
       );
 
-      // Then remove it
       const tx = await crossmintAppAuth.removeDevice(testDeviceId);
       await tx.wait();
 
-      // Check if device is no longer allowed
       expect(await crossmintAppAuth.allowedDeviceIds(testDeviceId)).to.equal(
         false
       );
@@ -180,7 +168,6 @@ describe("CrossmintAppAuth", () => {
     const wrongDeviceId = ethers.id("wrongDeviceId");
 
     beforeEach(async () => {
-      // Add allowed compose hash and device
       await (
         await crossmintAppAuth.addComposeHash(
           testComposeHash,
@@ -193,14 +180,13 @@ describe("CrossmintAppAuth", () => {
     });
 
     it("should allow app with correct appId, compose hash when allowAnyDevice is true", async () => {
-      // Set allowAnyDevice to true
       await (await crossmintAppAuth.setAllowAnyDevice(true)).wait();
 
       const bootInfo = {
         appId: appId,
         composeHash: testComposeHash,
         instanceId: ethers.ZeroAddress,
-        deviceId: wrongDeviceId, // Device ID doesn't matter when allowAnyDevice is true
+        deviceId: wrongDeviceId,
         mrAggregated: ethers.ZeroHash,
         mrSystem: ethers.ZeroHash,
         mrImage: ethers.ZeroHash,
@@ -214,7 +200,6 @@ describe("CrossmintAppAuth", () => {
     });
 
     it("should allow app with correct appId, compose hash, and device when allowAnyDevice is false", async () => {
-      // Set allowAnyDevice to false
       await (await crossmintAppAuth.setAllowAnyDevice(false)).wait();
 
       const bootInfo = {
@@ -236,7 +221,7 @@ describe("CrossmintAppAuth", () => {
 
     it("should not allow app with wrong appId", async () => {
       const bootInfo = {
-        appId: user.address, // Wrong app ID
+        appId: user.address,
         composeHash: testComposeHash,
         instanceId: ethers.ZeroAddress,
         deviceId: testDeviceId,
@@ -255,7 +240,7 @@ describe("CrossmintAppAuth", () => {
     it("should not allow app with wrong compose hash", async () => {
       const bootInfo = {
         appId: appId,
-        composeHash: wrongComposeHash, // Wrong compose hash
+        composeHash: wrongComposeHash,
         instanceId: ethers.ZeroAddress,
         deviceId: testDeviceId,
         mrAggregated: ethers.ZeroHash,
@@ -271,14 +256,13 @@ describe("CrossmintAppAuth", () => {
     });
 
     it("should not allow app with wrong device when allowAnyDevice is false", async () => {
-      // Set allowAnyDevice to false
       await (await crossmintAppAuth.setAllowAnyDevice(false)).wait();
 
       const bootInfo = {
         appId: appId,
         composeHash: testComposeHash,
         instanceId: ethers.ZeroAddress,
-        deviceId: wrongDeviceId, // Wrong device ID
+        deviceId: wrongDeviceId,
         mrAggregated: ethers.ZeroHash,
         mrSystem: ethers.ZeroHash,
         mrImage: ethers.ZeroHash,
@@ -297,12 +281,10 @@ describe("CrossmintAppAuth", () => {
       const tx = await crossmintAppAuth.disableUpgrades();
       await tx.wait();
 
-      // Create a new implementation
       const CrossmintAppAuthV2 = await ethers.getContractFactory(
         "CrossmintAppAuth"
       );
 
-      // Attempt to upgrade should fail
       await expect(
         upgrades.upgradeProxy(
           await crossmintAppAuth.getAddress(),
@@ -317,12 +299,10 @@ describe("CrossmintAppAuth", () => {
     });
 
     it("should be upgradeable when upgrades are not disabled", async () => {
-      // Create a new implementation
       const CrossmintAppAuthV2 = await ethers.getContractFactory(
         "CrossmintAppAuth"
       );
 
-      // Upgrade should succeed
       const upgraded = await upgrades.upgradeProxy(
         await crossmintAppAuth.getAddress(),
         CrossmintAppAuthV2
