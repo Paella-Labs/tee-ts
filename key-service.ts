@@ -16,15 +16,10 @@ export class KeyService {
 	 * Generate a key pair from user and project information
 	 */
 	public async derivePublicKey(
-		userId: string,
-		projectId: string,
+		signerId: string,
 		authId: string,
 	): Promise<string> {
-		const masterSecret = await this.deriveMasterSecret(
-			userId,
-			projectId,
-			authId,
-		);
+		const masterSecret = await this.deriveMasterSecret(signerId, authId);
 		const keypair = Keypair.fromSeed(masterSecret);
 		return keypair.publicKey.toBuffer().toString(this.outputEncoding);
 	}
@@ -33,19 +28,14 @@ export class KeyService {
 	 * Generate and split a key into device and auth shares
 	 */
 	public async generateAndSplitKey(
-		userId: string,
-		projectId: string,
+		signerId: string,
 		authId: string,
 	): Promise<{
 		device: string;
 		auth: string;
 		deviceKeyShareHash: string;
 	}> {
-		const masterSecret = await this.deriveMasterSecret(
-			userId,
-			projectId,
-			authId,
-		);
+		const masterSecret = await this.deriveMasterSecret(signerId, authId);
 
 		const [device, auth] = await split(masterSecret, 2, 2);
 		if (device == null || auth == null) {
@@ -67,14 +57,12 @@ export class KeyService {
 	 * Derive a master secret from user and project information
 	 */
 	private async deriveMasterSecret(
-		userId: string,
-		projectId: string,
+		signerId: string,
 		authId: string,
 	): Promise<Uint8Array> {
 		const info = new TextEncoder().encode(
 			JSON.stringify({
-				user_id: userId,
-				project_id: projectId,
+				signer_id: signerId,
 				auth_id: authId,
 				version: "1",
 			}),

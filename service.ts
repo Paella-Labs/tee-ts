@@ -13,8 +13,7 @@ export class TrustedService {
 	) {}
 
 	public async preGenerateSigner(
-		userId: string,
-		projectId: string,
+		signerId: string,
 		authId: string,
 		signingAlgorithm: SigningAlgorithm,
 	): Promise<string> {
@@ -29,15 +28,14 @@ export class TrustedService {
 			);
 		}
 
-		return await this.keyService.derivePublicKey(userId, projectId, authId);
+		return await this.keyService.derivePublicKey(signerId, authId);
 	}
 
 	/**
 	 * Create a new signer and start OTP verification flow
 	 */
 	public async initiateSignerCreation(
-		userId: string,
-		projectId: string,
+		signerId: string,
 		projectName: string,
 		authId: string,
 		deviceId: string,
@@ -49,7 +47,7 @@ export class TrustedService {
 			throw new Error("Invalid authId format");
 		}
 
-		let otp = this.otpService.generateOTP(userId, projectId, authId, deviceId);
+		let otp = this.otpService.generateOTP(signerId, authId, deviceId);
 
 		otp = (
 			await this.encryptionService.encryptOTP(
@@ -76,8 +74,7 @@ export class TrustedService {
 	): Promise<{ device: string; auth: string; deviceKeyShareHash: string }> {
 		const request = this.otpService.verifyOTP(deviceId, otp);
 		return this.keyService.generateAndSplitKey(
-			request.userId,
-			request.projectId,
+			request.signerId,
 			request.authId,
 		);
 	}

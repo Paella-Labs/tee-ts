@@ -9,6 +9,7 @@ import {
 	OTPVerificationSchema,
 	SignerPreGenerationSchema,
 	SignerRequestSchema,
+	SigningAlgorithm,
 } from "./schema";
 import { z } from "zod";
 import { TappdClient } from "@phala/dstack-sdk";
@@ -80,22 +81,14 @@ const server = Bun.serve({
 				});
 			},
 		},
-		"/signers/:deviceId": {
+		"/v1/devices:startOnboarding": {
 			async POST(req) {
 				try {
 					authenticate(req);
-					const { deviceId } = req.params;
-
-					if (!deviceId) {
-						throw new Response(JSON.stringify({ error: "Invalid deviceId" }), {
-							status: 400,
-						});
-					}
-
 					const body = await req.json();
 					const {
-						userId,
-						projectId,
+						deviceId,
+						signerId,
 						projectName,
 						projectLogo,
 						authId,
@@ -103,12 +96,11 @@ const server = Bun.serve({
 					} = validateRequest(
 						SignerRequestSchema,
 						body,
-						`[DEBUG] POST /signers/${deviceId}`,
+						"[DEBUG] POST /v1/devices:startOnboarding",
 					);
 
 					await services.trustedService.initiateSignerCreation(
-						userId,
-						projectId,
+						signerId,
 						projectName,
 						authId,
 						deviceId,
@@ -125,21 +117,19 @@ const server = Bun.serve({
 				}
 			},
 		},
-		"/signers/public-key": {
+		"/v1/signers:derivePublicKey": {
 			async PUT(req) {
 				try {
 					authenticate(req);
 					const body = await req.json();
-					const { userId, projectId, authId, signingAlgorithm } =
-						validateRequest(
-							SignerPreGenerationSchema,
-							body,
-							"[DEBUG] PUT /signers/public-key",
-						);
+					const { signerId, authId, signingAlgorithm } = validateRequest(
+						SignerPreGenerationSchema,
+						body,
+						"[DEBUG] PUT /v1/signers:derivePublicKey",
+					);
 
 					const publicKey = await services.trustedService.preGenerateSigner(
-						userId,
-						projectId,
+						signerId,
 						authId,
 						signingAlgorithm,
 					);
@@ -152,25 +142,19 @@ const server = Bun.serve({
 			},
 		},
 
-		"/signers/:deviceId/auth": {
+		"/v1/devices:completeOnboarding": {
 			async POST(req) {
 				try {
 					authenticate(req);
-					const { deviceId } = req.params;
-
-					if (!deviceId) {
-						throw new Response(JSON.stringify({ error: "Invalid deviceId" }), {
-							status: 400,
-						});
-					}
 
 					const body = await req.json();
-					if (!isEncryptedRequest(body)) {
-						throw new Response(
-							JSON.stringify({ error: "Request must be encrypted" }),
-							{ status: 400 },
-						);
-					}
+					const { deviceId } = validateRequest(
+						EncryptedRequestSchema.extend({
+							deviceId: z.string().min(1, { message: "Device ID is required" }),
+						}),
+						body,
+						"[DEBUG] PUT /v1/signers:derivePublicKey",
+					);
 
 					const decryptedPayload =
 						await services.encryptionService.decryptBase64<{

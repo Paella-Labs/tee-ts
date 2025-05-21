@@ -42,15 +42,10 @@ export const authIdSchema = z
 
 // Zod schemas for request validation
 export const SignerRequestSchema = z.object({
-	userId: z.string().min(1, { message: "User ID is required" }),
-	projectId: z.string().min(1, { message: "Project ID is required" }),
-	// projectName: z.string().min(1, { message: "Project name is required" }),
-	// projectLogo: z.string().optional(),
-	projectName: z.string().optional().default("Crossmint NCS Demo"),
-	projectLogo: z
-		.string()
-		.optional()
-		.default("https://www.crossmint.com/assets/crossmint/logo.png"),
+	signerId: z.string().min(1, { message: "Signer ID is required" }),
+	deviceId: z.string().min(1, { message: "Device ID is required" }),
+	projectName: z.string().min(1, { message: "Project name is required" }),
+	projectLogo: z.string().optional(),
 	authId: authIdSchema,
 	encryptionContext: z.object({
 		publicKey: z.string().min(1, { message: "Public key is required" }),
@@ -58,8 +53,7 @@ export const SignerRequestSchema = z.object({
 });
 
 export const SignerPreGenerationSchema = z.object({
-	userId: z.string().min(1, { message: "User ID is required" }),
-	projectId: z.string().min(1, { message: "Project ID is required" }),
+	signerId: z.string().min(1, { message: "Signer ID is required" }),
 	signingAlgorithm: z.nativeEnum(SigningAlgorithm),
 	authId: authIdSchema,
 });
