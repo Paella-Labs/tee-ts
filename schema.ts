@@ -13,7 +13,6 @@ export const SigningAlgorithm = {
 export type SigningAlgorithm =
 	(typeof SigningAlgorithm)[keyof typeof SigningAlgorithm];
 
-// Reusable schema for authId validation
 export const authIdSchema = z
 	.string()
 	.min(1, { message: "Auth ID is required" })
