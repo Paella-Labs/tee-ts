@@ -3,15 +3,19 @@ pragma solidity ^0.8.22;
 
 import "./IAppAuth.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
-import "@openzeppelin/contracts-upgradeable/access/OwnableUpgradeable.sol";
+import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 
 contract CrossmintAppAuth is
     Initializable,
-    OwnableUpgradeable,
+    AccessControlUpgradeable,
     UUPSUpgradeable,
     IAppAuth
 {
+    // Role definitions
+    bytes32 public constant UPGRADER_ROLE = keccak256("UPGRADER_ROLE");
+    bytes32 public constant MANAGER_ROLE = keccak256("MANAGER_ROLE");
+    
     // App ID this contract is managing
     address public appId;
 
@@ -42,53 +46,61 @@ contract CrossmintAppAuth is
 
     // Initialize the contract
     function initialize(
-        address initialOwner,
+        address initialAdmin,
         address _appId,
         bool _disableUpgrades,
         bool _allowAnyDevice
     ) public initializer {
-        require(initialOwner != address(0), "Invalid owner address");
+        require(initialAdmin != address(0), "Invalid admin address");
         require(_appId != address(0), "Invalid app ID");
+        
+        __AccessControl_init();
+        __UUPSUpgradeable_init();
+        
+        // Set up roles
+        _grantRole(DEFAULT_ADMIN_ROLE, initialAdmin);
+        _grantRole(UPGRADER_ROLE, initialAdmin);
+        _grantRole(MANAGER_ROLE, initialAdmin);
+        
         appId = _appId;
         _upgradesDisabled = _disableUpgrades;
         allowAnyDevice = _allowAnyDevice;
-        __Ownable_init(initialOwner);
-        __UUPSUpgradeable_init();
     }
 
     // Function to authorize upgrades (required by UUPSUpgradeable)
-    function _authorizeUpgrade(address) internal view override onlyOwner {
+    function _authorizeUpgrade(address) internal view override {
         require(!_upgradesDisabled, "Upgrades are permanently disabled");
+        require(hasRole(UPGRADER_ROLE, _msgSender()), "Upgrade: Must have upgrader role");
     }
 
     // Add a compose hash to allowed list
-    function addComposeHash(bytes32 composeHash, string calldata reason) external onlyOwner {
+    function addComposeHash(bytes32 composeHash, string calldata reason) external onlyRole(MANAGER_ROLE) {
         require(bytes(reason).length > 0, "Reason must be provided");
         allowedComposeHashes[composeHash] = true;
         emit ComposeHashAdded(composeHash, reason);
     }
 
     // Remove a compose hash from allowed list
-    function removeComposeHash(bytes32 composeHash) external onlyOwner {
+    function removeComposeHash(bytes32 composeHash) external onlyRole(MANAGER_ROLE) {
         allowedComposeHashes[composeHash] = false;
         emit ComposeHashRemoved(composeHash);
     }
 
     // Set whether any device is allowed to boot this app
-    function setAllowAnyDevice(bool _allowAnyDevice) external onlyOwner {
+    function setAllowAnyDevice(bool _allowAnyDevice) external onlyRole(MANAGER_ROLE) {
         allowAnyDevice = _allowAnyDevice;
         emit AllowAnyDeviceSet(_allowAnyDevice);
     }
 
     // Add a device ID to allowed list
-    function addDevice(bytes32 deviceId, string calldata reason) external onlyOwner {
+    function addDevice(bytes32 deviceId, string calldata reason) external onlyRole(MANAGER_ROLE) {
         require(bytes(reason).length > 0, "Reason must be provided");
         allowedDeviceIds[deviceId] = true;
         emit DeviceAdded(deviceId, reason);
     }
 
     // Remove a device ID from allowed list
-    function removeDevice(bytes32 deviceId) external onlyOwner {
+    function removeDevice(bytes32 deviceId) external onlyRole(MANAGER_ROLE) {
         allowedDeviceIds[deviceId] = false;
         emit DeviceRemoved(deviceId);
     }
@@ -116,7 +128,7 @@ contract CrossmintAppAuth is
     }
 
     // Function to permanently disable upgrades
-    function disableUpgrades() external onlyOwner {
+    function disableUpgrades() external onlyRole(DEFAULT_ADMIN_ROLE) {
         _upgradesDisabled = true;
         emit UpgradesDisabled();
     }
