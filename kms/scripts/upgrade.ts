@@ -15,7 +15,7 @@ async function main() {
 
   const [deployer] = await ethers.getSigners();
   console.log("Upgrading contracts with the account:", deployer.address);
-  console.log("Proxy address (Box V1):", PROXY_ADDRESS);
+  console.log("Proxy address (CrossmintAppAuth):", PROXY_ADDRESS);
 
   // Get the current implementation address
   const currentImplAddress = await upgrades.erc1967.getImplementationAddress(
@@ -23,62 +23,42 @@ async function main() {
   );
   console.log("Current implementation address:", currentImplAddress);
 
-  // Get the current value before upgrade
-  const Box = await ethers.getContractFactory("Box");
-  const box = Box.attach(PROXY_ADDRESS);
-  const currentValue = await box.retrieve();
-  console.log("Current value before upgrade:", currentValue.toString());
+  // Get some info about the current contract state
+  const CrossmintAppAuth = await ethers.getContractFactory("CrossmintAppAuth");
+  const appAuth = CrossmintAppAuth.attach(PROXY_ADDRESS);
+  const appId = await appAuth.appId();
+  const allowAnyDevice = await appAuth.allowAnyDevice();
+  console.log("Current state before upgrade:");
+  console.log("  App ID:", appId);
+  console.log("  Allow Any Device:", allowAnyDevice);
 
-  // Prepare the V2 implementation
-  const BoxV2 = await ethers.getContractFactory("BoxV2");
-  console.log("\nPreparing to upgrade to BoxV2...");
-
-  // Upgrade to BoxV2
-  const upgraded = await upgrades.upgradeProxy(PROXY_ADDRESS, BoxV2, {
-    kind: "uups",
-    call: { fn: "initializeV2" },
-  });
-
-  await upgraded.waitForDeployment();
-  const upgradedAddress = await upgraded.getAddress();
-  console.log("BoxV2 proxy address (should be the same):", upgradedAddress);
-
-  // Get the new implementation address
-  const newImplAddress = await upgrades.erc1967.getImplementationAddress(
-    upgradedAddress
-  );
-  console.log("BoxV2 implementation deployed to:", newImplAddress);
-
-  // Test that the value is preserved
-  const valueAfterUpgrade = await upgraded.retrieve();
-  console.log(
-    "Value after upgrade (should be preserved):",
-    valueAfterUpgrade.toString()
-  );
-
-  // Test the new increment function
-  console.log("\nTesting new BoxV2 functionality...");
-  console.log("Incrementing value...");
-  const tx = await upgraded.increment();
+  // Test adding a compose hash
+  const testComposeHash = ethers.hexlify(ethers.randomBytes(32));
+  console.log("Adding test compose hash:", testComposeHash);
+  const tx = await appAuth.addComposeHash(testComposeHash);
   await tx.wait();
-  console.log("Value incremented. Transaction hash:", tx.hash);
+  console.log("Compose hash added. Transaction hash:", tx.hash);
 
-  const incrementedValue = await upgraded.retrieve();
-  console.log("Value after increment:", incrementedValue.toString());
-
-  // Store a new value
-  console.log("Storing new value 789...");
-  const storeTx = await upgraded.store(789);
-  await storeTx.wait();
-  console.log("Value stored. Transaction hash:", storeTx.hash);
-
-  const finalValue = await upgraded.retrieve();
-  console.log("Final value after update:", finalValue.toString());
-
-  console.log("\nUpgrade to BoxV2 complete!");
-  console.log("To verify the new implementation on Basescan:");
+  // Prepare for an upgrade with the same contract implementation (for future use)
+  console.log("\nThis script demonstrates upgrading to a new implementation.");
+  console.log("When you need to upgrade in the future, you can:");
   console.log(
-    `npx hardhat verify --network ${hre.network.name} ${newImplAddress}`
+    "1. Update the CrossmintAppAuth.sol contract with new functionality"
+  );
+  console.log("2. Compile the updated contract");
+  console.log(
+    "3. Use this script to upgrade the deployed proxy to the new implementation"
+  );
+
+  // For now, let's just check if contract functions as expected
+  const isComposeHashAllowed = await appAuth.allowedComposeHashes(
+    testComposeHash
+  );
+  console.log("Is test compose hash allowed:", isComposeHashAllowed);
+
+  console.log("\nTo verify on Basescan:");
+  console.log(
+    `npx hardhat verify --network ${hre.network.name} ${currentImplAddress}`
   );
 }
 

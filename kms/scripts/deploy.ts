@@ -5,51 +5,60 @@ async function main() {
   const [deployer] = await ethers.getSigners();
   console.log("Deploying contracts with the account:", deployer.address);
 
-  const initialValue = 123n;
-  console.log("Initial value:", initialValue.toString());
+  // Deploy CrossmintAppAuth contract
+  console.log(
+    "Deploying CrossmintAppAuth (implementation contract) and UUPS Proxy..."
+  );
 
-  // Deploy Box contract
-  console.log("Deploying Box (implementation contract) and UUPS Proxy...");
+  const CrossmintAppAuth = await ethers.getContractFactory("CrossmintAppAuth");
 
-  const Box = await ethers.getContractFactory("Box");
-  const boxProxy = await upgrades.deployProxy(Box, [initialValue], {
-    kind: "uups",
-    initializer: "initialize",
-  });
+  // Parameters for initialization
+  const initialOwner = deployer.address;
+  const appId = "0x1234567890123456789012345678901234567890"; // Example app ID, replace with actual value
+  const disableUpgrades = false; // Allow upgrades initially
+  const allowAnyDevice = true; // Allow any device initially
 
-  await boxProxy.waitForDeployment();
+  console.log("Initial parameters:");
+  console.log("  Owner:", initialOwner);
+  console.log("  App ID:", appId);
+  console.log("  Disable Upgrades:", disableUpgrades);
+  console.log("  Allow Any Device:", allowAnyDevice);
 
-  const proxyAddress = await boxProxy.getAddress();
-  console.log("Box UUPS Proxy deployed to:", proxyAddress);
+  const appAuthProxy = await upgrades.deployProxy(
+    CrossmintAppAuth,
+    [initialOwner, appId, disableUpgrades, allowAnyDevice],
+    {
+      kind: "uups",
+      initializer: "initialize",
+    }
+  );
+
+  await appAuthProxy.waitForDeployment();
+
+  const proxyAddress = await appAuthProxy.getAddress();
+  console.log("CrossmintAppAuth UUPS Proxy deployed to:", proxyAddress);
 
   // Get the implementation address
   const implementationAddress = await upgrades.erc1967.getImplementationAddress(
     proxyAddress
   );
   console.log(
-    "Box Implementation contract deployed to:",
+    "CrossmintAppAuth Implementation contract deployed to:",
     implementationAddress
   );
 
-  // Read the initial value
-  const initialStoredValue = await boxProxy.retrieve();
-  console.log(
-    "Value retrieved from proxy (Box V1):",
-    initialStoredValue.toString()
-  );
-
-  // Store a new value
-  console.log("Storing new value 456...");
-  const tx = await boxProxy.store(456);
+  // Test adding a compose hash
+  const testComposeHash = ethers.hexlify(ethers.randomBytes(32));
+  console.log("Adding test compose hash:", testComposeHash);
+  const tx = await appAuthProxy.addComposeHash(testComposeHash);
   await tx.wait();
-  console.log("Value stored. Transaction hash:", tx.hash);
+  console.log("Compose hash added. Transaction hash:", tx.hash);
 
-  // Read the new value
-  const updatedValue = await boxProxy.retrieve();
-  console.log(
-    "New value stored and retrieved from proxy (Box V1):",
-    updatedValue.toString()
+  // Test if the compose hash was added
+  const isComposeHashAllowed = await appAuthProxy.allowedComposeHashes(
+    testComposeHash
   );
+  console.log("Is compose hash allowed:", isComposeHashAllowed);
 
   console.log(
     "\nTo verify on Basescan (replace with your proxy and implementation addresses):"
