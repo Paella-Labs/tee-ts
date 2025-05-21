@@ -202,20 +202,13 @@ const server = Bun.serve({
 						senderPublicKey,
 					);
 
-					const res = Response.json({
+					return Response.json({
 						...encryptedResponse,
 						shares: {
 							auth: unencryptedResponse.shares.auth,
 						},
 						deviceKeyShareHash,
 					});
-
-					res.headers.set("Access-Control-Allow-Origin", "*"); // TODO: restrict to xm
-					res.headers.set(
-						"Access-Control-Allow-Methods",
-						"GET, POST, PUT, DELETE, OPTIONS",
-					);
-					return res;
 				} catch (error) {
 					return handleError(error, "POST /requests/:requestId/auth");
 				}
@@ -225,12 +218,9 @@ const server = Bun.serve({
 			async GET(req) {
 				const pubKeyBuffer = await services.encryptionService.getPublicKey();
 				const pubKeyBase64 = Buffer.from(pubKeyBuffer).toString("base64");
-				const res = Response.json({
+				return Response.json({
 					publicKey: pubKeyBase64,
 				});
-				res.headers.set("Access-Control-Allow-Origin", "*"); // TODO: restrict to iframe
-				res.headers.set("Access-Control-Allow-Methods", "GET, OPTIONS");
-				return res;
 			},
 		},
 
