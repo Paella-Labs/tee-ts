@@ -58,8 +58,8 @@ export class SignerService {
 		projectName: string,
 		authId: string,
 		deviceId: string,
+		encryptionContext: { publicKey: string },
 		projectLogo?: string,
-		encryptionContext?: { publicKey: string },
 	): Promise<void> {
 		const encryptionService = EncryptionService.getInstance();
 		const recipient = authId.split(":")[1];
@@ -78,14 +78,12 @@ export class SignerService {
 			createdAt: Date.now(),
 		});
 
-		if (encryptionContext) {
-			otp = (
-				await encryptionService.encryptOTP(
-					otp.split("").map(Number),
-					encryptionContext.publicKey,
-				)
-			).join("");
-		}
+		otp = (
+			await encryptionService.encryptOTP(
+				otp.split("").map(Number),
+				encryptionContext.publicKey,
+			)
+		).join("");
 
 		await this.sendEmail(otp, recipient, projectName, projectLogo);
 	}

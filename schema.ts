@@ -13,6 +13,34 @@ export const SigningAlgorithm = {
 export type SigningAlgorithm =
 	(typeof SigningAlgorithm)[keyof typeof SigningAlgorithm];
 
+// Reusable schema for authId validation
+export const authIdSchema = z
+	.string()
+	.min(1, { message: "Auth ID is required" })
+	.refine(
+		(val) => {
+			const methodKeys = Object.values(AuthMethod);
+			return methodKeys.some((method) => val.startsWith(`${method}:`));
+		},
+		{
+			message: `Auth ID must start with one of: ${Object.values(
+				AuthMethod,
+			).join(", ")}:`,
+		},
+	)
+	.refine(
+		(val) => {
+			const [method, rest] = val.split(":");
+			if (method === AuthMethod.EMAIL) {
+				return rest?.includes("@");
+			}
+			return true; // For other methods, add more validation as needed
+		},
+		{
+			message: "Auth ID must contain a valid email address",
+		},
+	);
+
 // Zod schemas for request validation
 export const SignerRequestSchema = z.object({
 	userId: z.string().min(1, { message: "User ID is required" }),
@@ -24,41 +52,17 @@ export const SignerRequestSchema = z.object({
 		.string()
 		.optional()
 		.default("https://www.crossmint.com/assets/crossmint/logo.png"),
-	authId: z
-		.string()
-		.min(1, { message: "Auth ID is required" })
-		.refine(
-			(val) => {
-				const methodKeys = Object.values(AuthMethod);
-				return methodKeys.some((method) => val.startsWith(`${method}:`));
-			},
-			{
-				message: `Auth ID must start with one of: ${Object.values(
-					AuthMethod,
-				).join(", ")}:`,
-			},
-		)
-		.refine(
-			(val) => {
-				const [method, rest] = val.split(":");
-				if (method === AuthMethod.EMAIL) {
-					return rest?.includes("@");
-				}
-				return true; // For other methods, add more validation as needed
-			},
-			{
-				message: "Auth ID must contain a valid email address",
-			},
-		),
-	encryptionContext: z
-		.object({
-			publicKey: z.string().min(1, { message: "Public key is required" }),
-		})
-		.optional(),
+	authId: authIdSchema,
+	encryptionContext: z.object({
+		publicKey: z.string().min(1, { message: "Public key is required" }),
+	}),
 });
 
-export const SignerPreGenerationSchema = SignerRequestSchema.extend({
+export const SignerPreGenerationSchema = z.object({
+	userId: z.string().min(1, { message: "User ID is required" }),
+	projectId: z.string().min(1, { message: "Project ID is required" }),
 	signingAlgorithm: z.nativeEnum(SigningAlgorithm),
+	authId: authIdSchema,
 });
 
 export const OTPVerificationSchema = z.object({

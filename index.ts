@@ -147,8 +147,8 @@ const server = Bun.serve({
 						projectName,
 						authId,
 						deviceId,
-						projectLogo,
 						encryptionContext,
+						projectLogo,
 					);
 
 					const res = Response.json({
