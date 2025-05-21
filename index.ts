@@ -50,22 +50,6 @@ const EncryptedRequestSchema = z.object({
 	encapsulatedKey: z.string(),
 });
 
-// Response type definition
-type UnencryptedOtpResponse = {
-	shares: {
-		device: string;
-		auth: string;
-	};
-};
-// We also return, alongside the encrypted response, the Auth share (unencrypted), so the crossmint middleware can store it
-type EncryptedOtpResponse = z.infer<typeof EncryptedRequestSchema> & {
-	shares: {
-		auth: string;
-	};
-	deviceKeyShareHash: string;
-};
-type OtpResponse = UnencryptedOtpResponse | EncryptedOtpResponse;
-
 function isEncryptedRequest(
 	data: unknown,
 ): data is z.infer<typeof EncryptedRequestSchema> {
@@ -216,22 +200,21 @@ const server = Bun.serve({
 					}
 
 					const body = await req.json();
-					const isEncrypted = isEncryptedRequest(body);
-
-					let unencryptedBody: z.infer<typeof OTPVerificationSchema>;
-					let senderPublicKey: string | null = null;
-
-					if (isEncrypted) {
-						const decryptedPayload = await encryptionService.decryptBase64<{
-							data: z.infer<typeof OTPVerificationSchema>;
-							encryptionContext: { senderPublicKey: string };
-						}>(body.ciphertext, body.encapsulatedKey);
-						unencryptedBody = decryptedPayload.data;
-						senderPublicKey =
-							decryptedPayload.encryptionContext.senderPublicKey;
-					} else {
-						unencryptedBody = body;
+					if (!isEncryptedRequest(body)) {
+						throw new Response(
+							JSON.stringify({ error: "Request must be encrypted" }),
+							{ status: 400 },
+						);
 					}
+
+					const decryptedPayload = await encryptionService.decryptBase64<{
+						data: z.infer<typeof OTPVerificationSchema>;
+						encryptionContext: { senderPublicKey: string };
+					}>(body.ciphertext, body.encapsulatedKey);
+					const unencryptedBody = decryptedPayload.data;
+					const senderPublicKey =
+						decryptedPayload.encryptionContext.senderPublicKey;
+
 					console.log("Unencrypted payload", unencryptedBody);
 
 					const { otp } = validateRequest(
@@ -247,24 +230,18 @@ const server = Bun.serve({
 						shares: { device, auth },
 					};
 
-					let response: EncryptedOtpResponse | OtpResponse;
-					if (isEncrypted) {
-						const encryptedResponse = await generateEncryptedResponse(
-							unencryptedResponse,
-							senderPublicKey as NonNullable<typeof senderPublicKey>,
-						);
-						response = {
-							...encryptedResponse,
-							shares: {
-								auth: unencryptedResponse.shares.auth,
-							},
-							deviceKeyShareHash,
-						};
-					} else {
-						response = unencryptedResponse;
-					}
+					const encryptedResponse = await generateEncryptedResponse(
+						unencryptedResponse,
+						senderPublicKey,
+					);
 
-					const res = Response.json(response);
+					const res = Response.json({
+						...encryptedResponse,
+						shares: {
+							auth: unencryptedResponse.shares.auth,
+						},
+						deviceKeyShareHash,
+					});
 
 					res.headers.set("Access-Control-Allow-Origin", "*"); // TODO: restrict to xm
 					res.headers.set(
