@@ -40,6 +40,7 @@ export class InMemoryOTPService implements OTPService {
 	private pendingRequests = new Map<string, OTPRequest>();
 	private cleanupInterval: number | NodeJS.Timeout | null = null;
 	private readonly otpExpiryTime = 5 * 60 * 1000;
+	private readonly otpExpiryMessageGracePeriod = 60 * 60 * 1000;
 
 	private constructor() {
 		this.startCleanupInterval();
@@ -124,18 +125,22 @@ export class InMemoryOTPService implements OTPService {
 		}, this.otpExpiryTime);
 	}
 
-	private cleanupExpiredOTPs(): void {
+	public cleanupExpiredOTPs(): void {
 		const currentTime = Date.now();
 		let expiredCount = 0;
 
+		// Define the extended grace period (normal expiry + 1 hour)
+		const extendedExpiryTime =
+			this.otpExpiryTime + this.otpExpiryMessageGracePeriod;
+
 		for (const [deviceId, request] of this.pendingRequests.entries()) {
-			if (currentTime - request.createdAt > this.otpExpiryTime) {
+			if (currentTime - request.createdAt > extendedExpiryTime) {
 				this.pendingRequests.delete(deviceId);
 				expiredCount++;
 			}
 		}
 
-		if (expiredCount >= 0) {
+		if (expiredCount > 0) {
 			console.log(`[Cleanup] Removed ${expiredCount} expired OTPs from memory`);
 		}
 	}
