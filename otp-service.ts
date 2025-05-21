@@ -122,7 +122,6 @@ export class InMemoryOTPService implements OTPService {
 		const currentTime = Date.now();
 		let expiredCount = 0;
 
-		// Define the extended grace period (normal expiry + 1 hour)
 		const extendedExpiryTime =
 			this.otpExpiryTime + this.otpExpiryMessageGracePeriod;
 
