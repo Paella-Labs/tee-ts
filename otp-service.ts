@@ -94,7 +94,6 @@ export class InMemoryOTPService implements OTPService {
 		// Check if OTP has expired
 		const currentTime = Date.now();
 		if (currentTime - request.createdAt > this.otpExpiryTime) {
-			this.pendingRequests.delete(deviceId);
 			throw new Response(JSON.stringify({ error: "OTP has expired" }), {
 				status: 401,
 			});

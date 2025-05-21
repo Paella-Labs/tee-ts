@@ -72,17 +72,6 @@ describe("InMemoryOTPService", () => {
 			expect(errorData.error).toBe("OTP has expired");
 		}
 
-		// Try again - now it should be not found (since it was removed on the previous check)
-		try {
-			otpService.verifyOTP(deviceId, otp);
-			expect(true).toBe(false); // Should not reach here
-		} catch (error) {
-			expect(error).toBeInstanceOf(Response);
-			expect((error as Response).status).toBe(400); // Should be 400 (not pending)
-			const errorData = await (error as Response).json();
-			expect(errorData.error).toContain("is not pending");
-		}
-
 		// Cleanup
 		Date.now = originalNow;
 	});
@@ -210,7 +199,7 @@ describe("InMemoryOTPService", () => {
 			const sixMinutesLater = originalNow() + 6 * 60 * 1000;
 			Date.now = mock(() => sixMinutesLater);
 
-			// First, let's verify that the OTP is expired for users
+			// First, let's verify the OTP is expired for users
 			try {
 				otpService.verifyOTP(deviceId, otp);
 				expect(true).toBe(false); // Should not reach here
@@ -221,56 +210,56 @@ describe("InMemoryOTPService", () => {
 				expect(errorData.error).toBe("OTP has expired");
 			}
 
-			// Now we need a new OTP since the verification removed the expired one
-			// Generate a new OTP for the same device
-			otpService.generateOTP(userId, projectId, authId, deviceId);
-
 			// Run cleanup process at 6 minutes mark
 			otpService.cleanupExpiredOTPs();
 
-			// OTP should still be in memory (hasn't reached 1h5m yet),
-			// even after cleanup runs
+			// OTP should still be in memory after cleanup (hasn't reached 1h5m yet)
 			try {
-				otpService.verifyOTP(deviceId, "any-otp"); // Value doesn't matter, we expect to catch error
+				otpService.verifyOTP(deviceId, otp);
 				expect(true).toBe(false); // Should not reach here
 			} catch (error) {
-				// Since the OTP still exists, we should get Invalid OTP (401) error, not a "not pending" (400) error
+				// Should still be expired, not removed
 				expect(error).toBeInstanceOf(Response);
 				expect((error as Response).status).toBe(401);
 				const errorData = await (error as Response).json();
-				expect(errorData.error).toBe("Invalid OTP"); // We're using wrong OTP value
+				expect(errorData.error).toBe("OTP has expired");
 			}
 		} finally {
 			// PART 2: After 1 hour and 6 minutes (past the extended expiry time)
 			// OTP should now be removed by cleanup
 			try {
-				// One more time with a fresh OTP
-				const freshOtp = otpService.generateOTP(
-					userId,
-					projectId,
-					authId,
-					deviceId,
-				);
-
 				// Mock time to 1 hour and 6 minutes later (past normal expiry + 1 hour grace period)
 				const oneHourSixMinutesLater = originalNow() + 66 * 60 * 1000;
 				Date.now = mock(() => oneHourSixMinutesLater);
 
-				// Run cleanup process again at 1h6m mark
+				// The OTP should still be in memory before cleanup runs
+				try {
+					otpService.verifyOTP(deviceId, otp);
+					expect(true).toBe(false); // Should not reach here
+				} catch (error) {
+					expect(error).toBeInstanceOf(Response);
+					expect((error as Response).status).toBe(401); // Still expired
+					const errorData = await (error as Response).json();
+					expect(errorData.error).toBe("OTP has expired");
+				}
+
+				// Run cleanup process at 1h6m mark
 				otpService.cleanupExpiredOTPs();
 
-				// Now attempt to verify - should fail with "not pending" since OTP should be removed
-				otpService.verifyOTP(deviceId, freshOtp);
-				expect(true).toBe(false); // Should not reach here
-			} catch (error) {
-				expect(error).toBeInstanceOf(Response);
-				expect((error as Response).status).toBe(401); // OTP is still in memory but expired
-				const errorData = await (error as Response).json();
-				expect(errorData.error).toBe("OTP has expired");
+				// Now OTP should be removed by the cleanup process
+				try {
+					otpService.verifyOTP(deviceId, otp);
+					expect(true).toBe(false); // Should not reach here
+				} catch (error) {
+					expect(error).toBeInstanceOf(Response);
+					expect((error as Response).status).toBe(400); // Now 400 (not pending)
+					const errorData = await (error as Response).json();
+					expect(errorData.error).toContain("is not pending");
+				}
+			} finally {
+				// Cleanup
+				Date.now = originalNow;
 			}
-
-			// Cleanup
-			Date.now = originalNow;
 		}
 	});
 });
