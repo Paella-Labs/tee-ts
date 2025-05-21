@@ -41,8 +41,8 @@ export class TrustedService {
 		projectName: string,
 		authId: string,
 		deviceId: string,
+		encryptionContext: { publicKey: string },
 		projectLogo?: string,
-		encryptionContext?: { publicKey: string },
 	): Promise<void> {
 		const recipient = authId.split(":")[1];
 		if (recipient == null) {
@@ -51,14 +51,12 @@ export class TrustedService {
 
 		let otp = this.otpService.generateOTP(userId, projectId, authId, deviceId);
 
-		if (encryptionContext) {
-			otp = (
-				await this.encryptionService.encryptOTP(
-					otp.split("").map(Number),
-					encryptionContext.publicKey,
-				)
-			).join("");
-		}
+		otp = (
+			await this.encryptionService.encryptOTP(
+				otp.split("").map(Number),
+				encryptionContext.publicKey,
+			)
+		).join("");
 
 		await this.emailService.sendOTPEmail(
 			otp,
