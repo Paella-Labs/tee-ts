@@ -1,6 +1,3 @@
-/**
- * OTP request data structure
- */
 interface OTPRequest {
 	otp: string;
 	userId: string;
@@ -9,13 +6,9 @@ interface OTPRequest {
 	createdAt: number;
 	deviceId: string;
 }
-
-/**
- * Interface for OTP service implementations
- */
 export interface OTPService {
 	/**
-	 * Generate a new OTP and store it in memory
+	 * Generate a new OTP and store it
 	 */
 	generateOTP(
 		userId: string,
