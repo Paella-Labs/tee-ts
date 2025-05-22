@@ -1,12 +1,12 @@
 {
 	"name": "tee-ts",
-	"module": "index.ts",
+	"module": "src/index.ts",
 	"type": "module",
 	"private": true,
 	"scripts": {
-		"start": "bun run index.ts",
-		"dev": "bun --hot run index.ts",
-		"test": "bun test",
+		"start": "bun run src/index.ts",
+		"dev": "bun --hot run src/index.ts",
+		"test": "bun test src/**/*.test.ts",
 		"fmt": "bunx biome format --write ."
 	},
 	"devDependencies": {
