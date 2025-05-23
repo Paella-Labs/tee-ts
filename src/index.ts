@@ -6,7 +6,6 @@ import { env } from "./config";
 import type { AppEnv, ServiceInstances } from "./types";
 import { globalErrorHandler } from "./middleware/error.handler";
 
-// Import controllers
 import attestationController from "./features/attestation/attestation.controller";
 import healthController from "./features/health/health.controller";
 import { initializeServices } from "./services";
