@@ -1,8 +1,8 @@
 import { Hono } from "hono";
 import type { AppEnv } from "../../types";
 import {
-  getTDXQuoteHandler,
-  getTEEPublicKeyHandler,
+	getTDXQuoteHandler,
+	getTEEPublicKeyHandler,
 } from "./attestation.handler";
 
 const attestation = new Hono<AppEnv>();

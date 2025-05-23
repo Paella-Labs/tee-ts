@@ -4,19 +4,19 @@ import type { EncryptionService } from "./services/encryption.service";
 import type { TrustedService } from "services/trusted.service";
 
 export interface ServiceInstances {
-  trustedService: TrustedService;
-  encryptionService: EncryptionService;
+	trustedService: TrustedService;
+	encryptionService: EncryptionService;
 }
 
 export type AppEnv = {
-  Variables: {
-    services: ServiceInstances;
-    env: EnvConfig;
-    encryption?: {
-      decryptedBody: unknown;
-      clientPublicKeyForResponse: string;
-    };
-  };
+	Variables: {
+		services: ServiceInstances;
+		env: EnvConfig;
+		encryption?: {
+			decryptedBody: unknown;
+			clientPublicKeyForResponse: string;
+		};
+	};
 };
 
 export type AppContext = Context<AppEnv>;
