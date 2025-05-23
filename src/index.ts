@@ -12,51 +12,51 @@ import { initializeServices } from "./services";
 import { authMiddleware } from "middleware/auth";
 
 async function main() {
-  const services = await initializeServices(env);
-  const app = new Hono<AppEnv>();
+	const services = await initializeServices(env);
+	const app = new Hono<AppEnv>();
 
-  addMiddleware(app, services);
-  addRoutes(app);
-  addDefaultHandlers(app);
+	addMiddleware(app, services);
+	addRoutes(app);
+	addDefaultHandlers(app);
 
-  const server = {
-    port: env.PORT,
-    fetch: app.fetch,
-  };
+	const server = {
+		port: env.PORT,
+		fetch: app.fetch,
+	};
 
-  console.log(`Server listening on http://localhost:${env.PORT} ...`);
+	console.log(`Server listening on http://localhost:${env.PORT} ...`);
 
-  return server;
+	return server;
 }
 
 function addMiddleware(app: Hono<AppEnv>, services: ServiceInstances) {
-  app.use("*", logger());
-  app.use("*", async (c, next) => {
-    c.set("services", services);
-    c.set("env", env);
-    await next();
-  });
-  app.use("*", authMiddleware());
+	app.use("*", logger());
+	app.use("*", async (c, next) => {
+		c.set("services", services);
+		c.set("env", env);
+		await next();
+	});
+	app.use("*", authMiddleware());
 }
 
 function addRoutes(app: Hono<AppEnv>) {
-  app.route("/health", healthController);
-  app.route("/v1/signers", signerController);
-  app.route("/attestation", attestationController);
+	app.route("/health", healthController);
+	app.route("/v1/signers", signerController);
+	app.route("/attestation", attestationController);
 }
 
 function addDefaultHandlers(app: Hono<AppEnv>) {
-  app.notFound((c) => {
-    return c.json(
-      {
-        error: "Not Found",
-        message: `Route ${c.req.method} ${c.req.path} not found.`,
-      },
-      404
-    );
-  });
+	app.notFound((c) => {
+		return c.json(
+			{
+				error: "Not Found",
+				message: `Route ${c.req.method} ${c.req.path} not found.`,
+			},
+			404,
+		);
+	});
 
-  app.onError(globalErrorHandler);
+	app.onError(globalErrorHandler);
 }
 
 // Start the server
