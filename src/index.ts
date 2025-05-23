@@ -42,7 +42,7 @@ function addMiddleware(app: Hono<AppEnv>, services: ServiceInstances) {
 function addRoutes(app: Hono<AppEnv>) {
 	app.route("/health", healthController);
 	app.route("/v1/signers", signerController);
-	app.route("/attestation", attestationController);
+	app.route("/v1/attestation", attestationController);
 }
 
 function addDefaultHandlers(app: Hono<AppEnv>) {
