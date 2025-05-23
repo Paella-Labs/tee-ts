@@ -1,4 +1,3 @@
-// src/features/attestation/attestation.controller.ts
 import { Hono } from "hono";
 import type { AppEnv } from "../../types";
 import {

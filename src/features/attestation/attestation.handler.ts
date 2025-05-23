@@ -1,4 +1,3 @@
-// src/features/attestation/attestation.handler.ts
 import type { AppContext } from "../../types";
 import { TappdClient } from "@phala/dstack-sdk"; // Ensure this is installed
 
