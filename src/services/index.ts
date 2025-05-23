@@ -1,4 +1,4 @@
-import type { ENVSchema } from "schemas";
+import type { ENVSchema } from "../config";
 import { EncryptionService } from "./encryption.service";
 import { TrustedService } from "./trusted.service";
 import { InMemoryOTPService } from "./otp.service";
