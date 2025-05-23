@@ -15,7 +15,7 @@ const signer = new Hono<AppEnv>();
 
 signer.post(
   "/derive-public-key",
-  zValidator("json", SignerPreGenerationSchema, async (result, c) => {
+  zValidator("json", SignerPreGenerationSchema, (result, c) => {
     if (!result.success) {
       console.log(
         "[DEBUG] PUT /v1/signers/derive-public-key - Validation failed",
