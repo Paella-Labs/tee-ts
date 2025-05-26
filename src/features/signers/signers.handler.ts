@@ -102,5 +102,6 @@ export const completeOnboardingHandler = async (c: AppContext) => {
 			auth: unencryptedResponse.shares.auth,
 		},
 		deviceKeyShareHash,
+		deviceId,
 	});
 };
