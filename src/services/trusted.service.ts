@@ -16,12 +16,12 @@ export class TrustedService {
 	public async preGenerateSigner(
 		signerId: string,
 		authId: string,
-		signingAlgorithm: KeyType,
+		keyType: KeyType,
 	): Promise<PublicKeyResponse> {
-		if (signingAlgorithm !== "ed25519" && signingAlgorithm !== "secp256k1") {
+		if (keyType !== "ed25519" && keyType !== "secp256k1") {
 			throw new Response(
 				JSON.stringify({
-					error: `signingAlgorithm ${signingAlgorithm} not yet supported`,
+					error: `keyType ${keyType} not yet supported`,
 				}),
 				{
 					status: 400,
@@ -29,11 +29,7 @@ export class TrustedService {
 			);
 		}
 
-		return await this.keyService.derivePublicKey(
-			signerId,
-			authId,
-			signingAlgorithm,
-		);
+		return await this.keyService.derivePublicKey(signerId, authId, keyType);
 	}
 
 	/**

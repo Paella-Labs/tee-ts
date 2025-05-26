@@ -79,7 +79,7 @@ export type CompleteOnboardingRequest = z.infer<
 
 export const SignerPreGenerationSchema = z.object({
 	signerId: z.string().min(1, { message: "Signer ID is required" }),
-	signingAlgorithm: z.nativeEnum(KeyType),
+	keyType: z.nativeEnum(KeyType),
 	authId: AuthIdSchema,
 });
 export type SignerPreGenerationInput = z.infer<

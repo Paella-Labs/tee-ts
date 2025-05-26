@@ -1,6 +1,7 @@
 import { describe, expect, it } from "bun:test";
 import app from "../index";
 import { env } from "../config";
+import type { keyframes } from "hono/css";
 
 describe("Signers", () => {
 	describe("derive-public-key", () => {
@@ -14,7 +15,7 @@ describe("Signers", () => {
 				body: JSON.stringify({
 					signerId: "user:project",
 					authId: "email:user@example.com",
-					signingAlgorithm: "ed25519",
+					keyType: "ed25519",
 				}),
 			});
 			const res = await app.fetch(req);
