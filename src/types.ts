@@ -22,9 +22,7 @@ export type AppEnv = {
 export type AppContext = Context<AppEnv>;
 
 export type PublicKeyResponse = {
-	publicKey: {
-		bytes: string;
-		encoding: "base64" | "hex" | "base58";
-		keyType: "ed25519" | "secp256k1";
-	};
+	bytes: string;
+	encoding: "base64" | "hex" | "base58";
+	keyType: "ed25519" | "secp256k1";
 };
