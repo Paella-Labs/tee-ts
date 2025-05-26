@@ -28,7 +28,11 @@ export class TrustedService {
 			);
 		}
 
-		return await this.keyService.derivePublicKey(signerId, authId);
+		return await this.keyService.derivePublicKey(
+			signerId,
+			authId,
+			signingAlgorithm,
+		);
 	}
 
 	/**

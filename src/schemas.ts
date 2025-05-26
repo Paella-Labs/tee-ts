@@ -8,6 +8,7 @@ type AuthMethod = (typeof AuthMethod)[keyof typeof AuthMethod];
 
 export const SigningAlgorithm = {
 	ED25519: "ed25519",
+	SECP256K1: "secp256k1",
 } as const;
 
 export type SigningAlgorithm =

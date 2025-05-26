@@ -1,5 +1,6 @@
 import { split } from "shamir-secret-sharing";
 import { Keypair } from "@solana/web3.js";
+import type { SigningAlgorithm } from "schemas";
 
 /**
  * Service for key derivation and management
@@ -18,10 +19,21 @@ export class KeyService {
 	public async derivePublicKey(
 		signerId: string,
 		authId: string,
+		signingAlgorithm: SigningAlgorithm,
 	): Promise<string> {
 		const masterSecret = await this.deriveMasterSecret(signerId, authId);
-		const keypair = Keypair.fromSeed(masterSecret);
-		return keypair.publicKey.toBuffer().toString(this.outputEncoding);
+		switch (signingAlgorithm) {
+			case "ed25519": {
+				const keypair = Keypair.fromSeed(masterSecret);
+				return keypair.publicKey.toBuffer().toString(this.outputEncoding);
+			}
+			case "secp256k1": {
+				return "";
+			}
+			default: {
+				throw new Error(`Signing algorithm ${signingAlgorithm} not supported`);
+			}
+		}
 	}
 
 	/**

@@ -16,7 +16,7 @@ export const derivePublicKeyHandler = async (c: AppContext) => {
 
 	const { signerId, authId, signingAlgorithm } = body;
 
-	console.log("[DEBUG] PUT /v1/signers/derive-public-key - Body:", body);
+	console.log("[DEBUG] POST /v1/signers/derive-public-key - Body:", body);
 
 	const publicKey = await services.trustedService.preGenerateSigner(
 		signerId,

@@ -10,7 +10,7 @@ describe("Signers", () => {
 					authorization: env.ACCESS_SECRET,
 					"content-type": "application/json",
 				},
-				method: "POST",
+				method: "PUT",
 				body: JSON.stringify({
 					signerId: "user:project",
 					authId: "email:user@example.com",
