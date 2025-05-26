@@ -1,6 +1,6 @@
 import { split } from "shamir-secret-sharing";
 import { Keypair } from "@solana/web3.js";
-import type { SigningAlgorithm } from "schemas";
+import type { KeyType } from "schemas";
 import { secp256k1 } from "ethereum-cryptography/secp256k1.js";
 import { sha256 } from "ethereum-cryptography/sha256.js";
 import { toHex } from "ethereum-cryptography/utils";
@@ -23,7 +23,7 @@ export class KeyService {
 	public async derivePublicKey(
 		signerId: string,
 		authId: string,
-		keyType: SigningAlgorithm,
+		keyType: KeyType,
 	): Promise<PublicKeyResponse> {
 		const masterSecret = await this.deriveMasterSecret(signerId, authId);
 		switch (keyType) {

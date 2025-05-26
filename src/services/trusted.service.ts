@@ -2,7 +2,7 @@ import type { EncryptionService } from "./encryption.service";
 import type { OTPService } from "./otp.service";
 import type { EmailService } from "./email.service";
 import type { KeyService } from "./key.service";
-import type { SigningAlgorithm } from "../schemas";
+import type { KeyType } from "../schemas";
 import type { PublicKeyResponse } from "types";
 
 export class TrustedService {
@@ -16,7 +16,7 @@ export class TrustedService {
 	public async preGenerateSigner(
 		signerId: string,
 		authId: string,
-		signingAlgorithm: SigningAlgorithm,
+		signingAlgorithm: KeyType,
 	): Promise<PublicKeyResponse> {
 		if (signingAlgorithm !== "ed25519" && signingAlgorithm !== "secp256k1") {
 			throw new Response(
