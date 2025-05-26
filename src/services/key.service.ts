@@ -5,6 +5,7 @@ import { secp256k1 } from "ethereum-cryptography/secp256k1.js";
 import { sha256 } from "ethereum-cryptography/sha256.js";
 import { toHex } from "ethereum-cryptography/utils";
 import type { PublicKeyResponse } from "types";
+const SECP256K1_DERIVATION_PATH = new Uint8Array([0x42]);
 
 /**
  * Service for key derivation and management
@@ -41,7 +42,12 @@ export class KeyService {
 				const privateKeyFromSeed = async (
 					seed: Uint8Array,
 				): Promise<Uint8Array> => {
-					const privateKey = sha256(seed);
+					const secp256k1DerivationSeed = new Uint8Array(
+						seed.length + SECP256K1_DERIVATION_PATH.length,
+					);
+					secp256k1DerivationSeed.set(seed, 0);
+					secp256k1DerivationSeed.set(derivationPath, seed.length);
+					const privateKey = sha256(secp256k1DerivationSeed);
 					if (!secp256k1.utils.isValidPrivateKey(privateKey)) {
 						return privateKeyFromSeed(privateKey);
 					}
