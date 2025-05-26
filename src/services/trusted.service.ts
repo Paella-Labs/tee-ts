@@ -2,7 +2,8 @@ import type { EncryptionService } from "./encryption.service";
 import type { OTPService } from "./otp.service";
 import type { EmailService } from "./email.service";
 import type { KeyService } from "./key.service";
-import type { SigningAlgorithm } from "../schemas";
+import type { KeyType } from "../schemas";
+import type { PublicKeyResponse } from "types";
 
 export class TrustedService {
 	constructor(
@@ -15,12 +16,12 @@ export class TrustedService {
 	public async preGenerateSigner(
 		signerId: string,
 		authId: string,
-		signingAlgorithm: SigningAlgorithm,
-	): Promise<string> {
-		if (signingAlgorithm !== "ed25519") {
+		keyType: KeyType,
+	): Promise<PublicKeyResponse> {
+		if (keyType !== "ed25519" && keyType !== "secp256k1") {
 			throw new Response(
 				JSON.stringify({
-					error: `signingAlgorithm ${signingAlgorithm} not yet supported`,
+					error: `keyType ${keyType} not yet supported`,
 				}),
 				{
 					status: 400,
@@ -28,11 +29,7 @@ export class TrustedService {
 			);
 		}
 
-		return await this.keyService.derivePublicKey(
-			signerId,
-			authId,
-			signingAlgorithm,
-		);
+		return await this.keyService.derivePublicKey(signerId, authId, keyType);
 	}
 
 	/**

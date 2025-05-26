@@ -6,13 +6,12 @@ const AuthMethod = {
 
 type AuthMethod = (typeof AuthMethod)[keyof typeof AuthMethod];
 
-export const SigningAlgorithm = {
+export const KeyType = {
 	ED25519: "ed25519",
 	SECP256K1: "secp256k1",
 } as const;
 
-export type SigningAlgorithm =
-	(typeof SigningAlgorithm)[keyof typeof SigningAlgorithm];
+export type KeyType = (typeof KeyType)[keyof typeof KeyType];
 
 const AuthIdSchema = z
 	.string()
@@ -80,7 +79,7 @@ export type CompleteOnboardingRequest = z.infer<
 
 export const SignerPreGenerationSchema = z.object({
 	signerId: z.string().min(1, { message: "Signer ID is required" }),
-	signingAlgorithm: z.nativeEnum(SigningAlgorithm),
+	keyType: z.nativeEnum(KeyType),
 	authId: AuthIdSchema,
 });
 export type SignerPreGenerationInput = z.infer<

@@ -14,14 +14,14 @@ export const derivePublicKeyHandler = async (c: AppContext) => {
 	const services = c.get("services");
 	const body = await c.req.json<SignerPreGenerationInput>();
 
-	const { signerId, authId, signingAlgorithm } = body;
+	const { signerId, authId, keyType } = body;
 
 	console.log("[DEBUG] POST /v1/signers/derive-public-key - Body:", body);
 
 	const publicKey = await services.trustedService.preGenerateSigner(
 		signerId,
 		authId,
-		signingAlgorithm,
+		keyType,
 	);
 
 	return c.json({ publicKey });
