@@ -18,7 +18,7 @@ signer.post(
 	zValidator("json", SignerPreGenerationSchema, (result, c) => {
 		if (!result.success) {
 			console.log(
-				"[DEBUG] PUT /v1/signers/derive-public-key - Validation failed",
+				"[DEBUG] POST /v1/signers/derive-public-key - Validation failed",
 				result.error.format(),
 			);
 			return c.json(
@@ -35,7 +35,7 @@ signer.post(
 	zValidator("json", StartOnboardingRequestSchema, (result, c) => {
 		if (!result.success) {
 			console.log(
-				"[DEBUG] PUT /v1/signers/start-onboarding - Validation failed",
+				"[DEBUG] POST /v1/signers/start-onboarding - Validation failed",
 				result.error.format(),
 			);
 			return c.json(
@@ -52,7 +52,7 @@ signer.post(
 	zValidator("json", EncryptedRequestSchema, (result, c) => {
 		if (!result.success) {
 			console.log(
-				"[DEBUG] PUT /v1/signers/complete-onboarding - Validation failed",
+				"[DEBUG] POST /v1/signers/complete-onboarding - Validation failed",
 				result.error.format(),
 			);
 		}
