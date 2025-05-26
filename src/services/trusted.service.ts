@@ -3,6 +3,7 @@ import type { OTPService } from "./otp.service";
 import type { EmailService } from "./email.service";
 import type { KeyService } from "./key.service";
 import type { SigningAlgorithm } from "../schemas";
+import type { PublicKeyResponse } from "types";
 
 export class TrustedService {
 	constructor(
@@ -16,8 +17,8 @@ export class TrustedService {
 		signerId: string,
 		authId: string,
 		signingAlgorithm: SigningAlgorithm,
-	): Promise<string> {
-		if (signingAlgorithm !== "ed25519") {
+	): Promise<PublicKeyResponse> {
+		if (signingAlgorithm !== "ed25519" && signingAlgorithm !== "secp256k1") {
 			throw new Response(
 				JSON.stringify({
 					error: `signingAlgorithm ${signingAlgorithm} not yet supported`,
