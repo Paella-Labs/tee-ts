@@ -7,7 +7,7 @@ import {
 	mock,
 	jest,
 } from "bun:test";
-import { InMemoryOTPService } from "./otp-service";
+import { InMemoryOTPService } from "./otp.service";
 
 describe("InMemoryOTPService", () => {
 	let otpService: InMemoryOTPService;
@@ -29,32 +29,29 @@ describe("InMemoryOTPService", () => {
 
 	it("should generate and verify an OTP successfully", () => {
 		// Arrange
-		const userId = "test-user-id";
-		const projectId = "test-project-id";
+		const signerId = "test-signer-id";
 		const authId = "email:test@example.com";
 		const deviceId = "test-device-id";
 
 		// Act
-		const otp = otpService.generateOTP(userId, projectId, authId, deviceId);
+		const otp = otpService.generateOTP(signerId, authId, deviceId);
 		const request = otpService.verifyOTP(deviceId, otp);
 
 		// Assert
 		expect(request).toBeDefined();
-		expect(request.userId).toBe(userId);
-		expect(request.projectId).toBe(projectId);
+		expect(request.signerId).toBe(signerId);
 		expect(request.authId).toBe(authId);
 		expect(request.deviceId).toBe(deviceId);
 	});
 
 	it("should not allow verification of expired OTPs", async () => {
 		// Arrange
-		const userId = "test-user-id";
-		const projectId = "test-project-id";
+		const signerId = "test-signer-id";
 		const authId = "email:test@example.com";
 		const deviceId = "test-device-id";
 
 		// Generate an OTP
-		const otp = otpService.generateOTP(userId, projectId, authId, deviceId);
+		const otp = otpService.generateOTP(signerId, authId, deviceId);
 
 		// Mock Date.now to simulate time passing
 		const originalNow = Date.now;
@@ -78,12 +75,11 @@ describe("InMemoryOTPService", () => {
 
 	it("should throw an error when OTP is incorrect", async () => {
 		// Arrange
-		const userId = "test-user-id";
-		const projectId = "test-project-id";
+		const signerId = "test-signer-id";
 		const authId = "email:test@example.com";
 		const deviceId = "test-device-id";
 
-		otpService.generateOTP(userId, projectId, authId, deviceId);
+		otpService.generateOTP(signerId, authId, deviceId);
 		const incorrectOTP = "999999"; // Incorrect OTP
 
 		// Act & Assert
@@ -118,12 +114,11 @@ describe("InMemoryOTPService", () => {
 
 	it("should ensure OTP cannot be verified twice", async () => {
 		// Arrange
-		const userId = "test-user-id";
-		const projectId = "test-project-id";
+		const signerId = "test-signer-id";
 		const authId = "email:test@example.com";
 		const deviceId = "test-device-id";
 
-		const otp = otpService.generateOTP(userId, projectId, authId, deviceId);
+		const otp = otpService.generateOTP(signerId, authId, deviceId);
 
 		// Act - First verification should succeed
 		const request = otpService.verifyOTP(deviceId, otp);
@@ -144,13 +139,12 @@ describe("InMemoryOTPService", () => {
 
 	it("should clean up expired OTPs through cleanup process", async () => {
 		// Arrange
-		const userId = "test-user-id";
-		const projectId = "test-project-id";
+		const signerId = "test-signer-id";
 		const authId = "email:test@example.com";
 		const deviceId = "test-device-id";
 
 		// Generate an OTP
-		otpService.generateOTP(userId, projectId, authId, deviceId);
+		otpService.generateOTP(signerId, authId, deviceId);
 
 		// Mock Date.now to simulate time passing
 		const originalNow = Date.now;
@@ -181,13 +175,12 @@ describe("InMemoryOTPService", () => {
 
 	it("should only clean up OTPs that are at least one hour past their expiry", async () => {
 		// Arrange
-		const userId = "test-user-id";
-		const projectId = "test-project-id";
+		const signerId = "test-signer-id";
 		const authId = "email:test@example.com";
 		const deviceId = "test-device-id";
 
 		// Generate an OTP
-		const otp = otpService.generateOTP(userId, projectId, authId, deviceId);
+		const otp = otpService.generateOTP(signerId, authId, deviceId);
 
 		// Store original Date.now
 		const originalNow = Date.now;

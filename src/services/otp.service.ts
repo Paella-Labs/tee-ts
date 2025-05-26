@@ -1,7 +1,6 @@
 interface OTPRequest {
 	otp: string;
-	userId: string;
-	projectId: string;
+	signerId: string;
 	authId: string;
 	createdAt: number;
 	deviceId: string;
@@ -10,12 +9,7 @@ export interface OTPService {
 	/**
 	 * Generate a new OTP and store it
 	 */
-	generateOTP(
-		userId: string,
-		projectId: string,
-		authId: string,
-		deviceId: string,
-	): string;
+	generateOTP(signerId: string, authId: string, deviceId: string): string;
 
 	/**
 	 * Verify an OTP for a given device
@@ -53,8 +47,7 @@ export class InMemoryOTPService implements OTPService {
 	 * Generate a new OTP and store it in memory
 	 */
 	public generateOTP(
-		userId: string,
-		projectId: string,
+		signerId: string,
 		authId: string,
 		deviceId: string,
 	): string {
@@ -63,8 +56,7 @@ export class InMemoryOTPService implements OTPService {
 
 		this.pendingRequests.set(deviceId, {
 			otp,
-			userId,
-			projectId,
+			signerId,
 			authId,
 			createdAt: Date.now(),
 			deviceId,

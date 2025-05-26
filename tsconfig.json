@@ -26,6 +26,13 @@
 		"noPropertyAccessFromIndexSignature": false,
 
 		// Add types for Bun
-		"types": ["bun-types"]
-	}
+		"types": ["bun-types"],
+
+		// Source directory
+		"baseUrl": ".",
+		"paths": {
+			"*": ["src/*"]
+		}
+	},
+	"include": ["src/**/*"]
 }

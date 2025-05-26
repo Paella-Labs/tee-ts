@@ -1,8 +1,8 @@
-import type { EncryptionService } from "./encryption";
-import type { OTPService } from "./otp-service";
-import type { EmailService } from "./email-service";
-import type { KeyService } from "./key-service";
-import type { SigningAlgorithm } from "./schema";
+import type { EncryptionService } from "./encryption.service";
+import type { OTPService } from "./otp.service";
+import type { EmailService } from "./email.service";
+import type { KeyService } from "./key.service";
+import type { SigningAlgorithm } from "../schemas";
 
 export class TrustedService {
 	constructor(
@@ -13,12 +13,11 @@ export class TrustedService {
 	) {}
 
 	public async preGenerateSigner(
-		userId: string,
-		projectId: string,
+		signerId: string,
 		authId: string,
 		signingAlgorithm: SigningAlgorithm,
 	): Promise<string> {
-		if (signingAlgorithm !== "EDDSA_ED25519") {
+		if (signingAlgorithm !== "ed25519") {
 			throw new Response(
 				JSON.stringify({
 					error: `signingAlgorithm ${signingAlgorithm} not yet supported`,
@@ -29,15 +28,14 @@ export class TrustedService {
 			);
 		}
 
-		return await this.keyService.derivePublicKey(userId, projectId, authId);
+		return await this.keyService.derivePublicKey(signerId, authId);
 	}
 
 	/**
 	 * Create a new signer and start OTP verification flow
 	 */
 	public async initiateSignerCreation(
-		userId: string,
-		projectId: string,
+		signerId: string,
 		projectName: string,
 		authId: string,
 		deviceId: string,
@@ -49,7 +47,7 @@ export class TrustedService {
 			throw new Error("Invalid authId format");
 		}
 
-		let otp = this.otpService.generateOTP(userId, projectId, authId, deviceId);
+		let otp = this.otpService.generateOTP(signerId, authId, deviceId);
 
 		otp = (
 			await this.encryptionService.encryptOTP(
@@ -76,8 +74,7 @@ export class TrustedService {
 	): Promise<{ device: string; auth: string; deviceKeyShareHash: string }> {
 		const request = this.otpService.verifyOTP(deviceId, otp);
 		return this.keyService.generateAndSplitKey(
-			request.userId,
-			request.projectId,
+			request.signerId,
 			request.authId,
 		);
 	}
