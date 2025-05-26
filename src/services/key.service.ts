@@ -30,9 +30,11 @@ export class KeyService {
 			case "ed25519": {
 				const keypair = Keypair.fromSeed(masterSecret);
 				return {
-					bytes: keypair.publicKey.toBase58(),
-					encoding: "base58",
-					keyType: "ed25519",
+					publicKey: {
+						bytes: keypair.publicKey.toBase58(),
+						encoding: "base58",
+						keyType: "ed25519",
+					},
 				};
 			}
 			case "secp256k1": {
@@ -50,9 +52,11 @@ export class KeyService {
 				const publicKey = secp256k1.getPublicKey(privateKey, isCompressed);
 
 				return {
-					bytes: toHex(publicKey),
-					encoding: "hex",
-					keyType: "secp256k1",
+					publicKey: {
+						bytes: toHex(publicKey),
+						encoding: "hex",
+						keyType: "secp256k1",
+					},
 				};
 			}
 			default: {
