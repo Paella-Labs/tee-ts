@@ -36,13 +36,23 @@ Use the Bruno API client to test the endpoints:
 
 1. Open Bruno collection located in `./bruno`
 2. Test the signer flow:
-   - Create signer with `POST /signers` - sends OTP email
-   - Verify OTP with `POST /requests/:requestId/auth`
+   - Derive public key with `POST /v1/signers/derive-public-key`
+   - Start onboarding with `POST /v1/signers/start-onboarding`
+   - Complete onboarding with `POST /v1/signers/complete-onboarding`
 
 ## API Endpoints
 
-- `POST /signers` - Start signer creation flow
-- `POST /requests/:requestId/auth` - Authenticate and complete signer creation OTP
+### Health
+- `GET /health` - Check service health status
+
+### Attestation
+- `GET /v1/attestation/public-key` - Get TEE public key
+- `GET /v1/attestation/tdx-quote` - Get TDX quote for attestation
+
+### Signers
+- `POST /v1/signers/derive-public-key` - Derive a public key for a signer
+- `POST /v1/signers/start-onboarding` - Start the signer onboarding process
+- `POST /v1/signers/complete-onboarding` - Complete the signer onboarding process
 
 This project was created using Bun. [Bun](https://bun.sh) is a fast all-in-one JavaScript runtime.
 
