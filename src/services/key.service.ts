@@ -1,6 +1,10 @@
 import { split } from "shamir-secret-sharing";
 import { Keypair } from "@solana/web3.js";
 import type { SigningAlgorithm } from "schemas";
+import { secp256k1 } from "ethereum-cryptography/secp256k1.js";
+import { sha256 } from "ethereum-cryptography/sha256.js";
+import { toHex } from "ethereum-cryptography/utils";
+import type { PublicKeyResponse } from "types";
 
 /**
  * Service for key derivation and management
@@ -19,19 +23,40 @@ export class KeyService {
 	public async derivePublicKey(
 		signerId: string,
 		authId: string,
-		signingAlgorithm: SigningAlgorithm,
-	): Promise<string> {
+		keyType: SigningAlgorithm,
+	): Promise<PublicKeyResponse> {
 		const masterSecret = await this.deriveMasterSecret(signerId, authId);
-		switch (signingAlgorithm) {
+		switch (keyType) {
 			case "ed25519": {
 				const keypair = Keypair.fromSeed(masterSecret);
-				return keypair.publicKey.toBuffer().toString(this.outputEncoding);
+				return {
+					bytes: keypair.publicKey.toBase58(),
+					encoding: "base58",
+					keyType: "ed25519",
+				};
 			}
 			case "secp256k1": {
-				return "";
+				const privateKey = sha256(masterSecret);
+				const privateKeyFromSeed = async (
+					seed: Uint8Array,
+				): Promise<Uint8Array> => {
+					const privateKey = sha256(seed);
+					if (!secp256k1.utils.isValidPrivateKey(privateKey)) {
+						return privateKeyFromSeed(privateKey);
+					}
+					return privateKey;
+				};
+				const isCompressed = false;
+				const publicKey = secp256k1.getPublicKey(privateKey, isCompressed);
+
+				return {
+					bytes: toHex(publicKey),
+					encoding: "hex",
+					keyType: "secp256k1",
+				};
 			}
 			default: {
-				throw new Error(`Signing algorithm ${signingAlgorithm} not supported`);
+				throw new Error(`Key type ${keyType} not supported`);
 			}
 		}
 	}
