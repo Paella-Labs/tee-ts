@@ -38,7 +38,6 @@ export class KeyService {
 				};
 			}
 			case "secp256k1": {
-				const privateKey = sha256(masterSecret);
 				const privateKeyFromSeed = async (
 					seed: Uint8Array,
 				): Promise<Uint8Array> => {
@@ -48,6 +47,7 @@ export class KeyService {
 					}
 					return privateKey;
 				};
+				const privateKey = await privateKeyFromSeed(masterSecret);
 				const isCompressed = false;
 				const publicKey = secp256k1.getPublicKey(privateKey, isCompressed);
 
