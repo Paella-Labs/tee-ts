@@ -49,7 +49,7 @@ export class KeyService {
 						seed.length + SECP256K1_DERIVATION_PATH.length,
 					);
 					secp256k1DerivationSeed.set(seed, 0);
-					secp256k1DerivationSeed.set(derivationPath, seed.length);
+					secp256k1DerivationSeed.set(SECP256K1_DERIVATION_PATH, seed.length);
 					const privateKey = sha256(secp256k1DerivationSeed);
 					if (!secp256k1.utils.isValidPrivateKey(privateKey)) {
 						return privateKeyFromSeed(privateKey);
