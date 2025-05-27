@@ -10,6 +10,7 @@ import healthController from "./features/health/health.controller";
 import { initializeServices } from "./services";
 import { requestLogger } from "middleware/logger.middleware";
 import { httpMetricsMiddleware } from "middleware/metrics.middleware";
+import logger from "logging/logger";
 
 async function main() {
 	const services = await initializeServices(env);
@@ -33,6 +34,7 @@ function addMiddleware(app: Hono<AppEnv>, services: ServiceInstances) {
 	app.use("*", async (c, next) => {
 		c.set("services", services);
 		c.set("env", env);
+		c.set("logger", logger);
 		await next();
 	});
 	app.use("*", httpMetricsMiddleware());

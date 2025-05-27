@@ -2,10 +2,10 @@ import { HTTPException } from "hono/http-exception";
 import { ZodError } from "zod";
 import type { ErrorHandler } from "hono";
 import type { AppEnv } from "../types";
-import customLogger from "../logging/logger";
 
 export const globalErrorHandler: ErrorHandler<AppEnv> = (err, c) => {
-	customLogger.error(
+	const logger = c.get("logger");
+	logger.error(
 		`[ERROR] Request to ${c.req.method} ${c.req.path} failed: ${err.message}`,
 		{
 			error: {

@@ -1,11 +1,11 @@
 import type { MiddlewareHandler } from "hono";
-import logger from "../logging/logger";
 
 export const requestLogger = (): MiddlewareHandler => {
 	return async (c, next) => {
 		const startTime = Date.now();
 		const requestUrl = c.req.url;
 		const method = c.req.method;
+		const logger = c.get("logger");
 
 		logger.info(`--> ${method} ${requestUrl}`, {
 			http: {
