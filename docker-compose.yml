@@ -1,10 +1,7 @@
 services:
   tee-ts:
-    # image: ${DOCKER_IMAGE:-xmregistry/crossmint-ts-tee:latest}
+    image: ${DOCKER_IMAGE:-xmregistry/crossmint-ts-tee:latest}
     container_name: tee-ts
-    build:
-      context: .
-      dockerfile: Dockerfile
     restart: unless-stopped
     healthcheck:
       test:
@@ -39,10 +36,7 @@ services:
       - tee-ts-network
 
   nginx:
-    # image: ${NGINX_DOCKER_IMAGE:-xmregistry/crossmint-ts-tee-nginx:latest}
-    build:
-      context: .
-      dockerfile: nginx.Dockerfile
+    image: ${NGINX_DOCKER_IMAGE:-xmregistry/crossmint-ts-tee-nginx:latest}
     container_name: nginx-proxy
     restart: unless-stopped
     healthcheck:
