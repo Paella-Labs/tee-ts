@@ -35,7 +35,6 @@ export const httpMetricsMiddleware = (): MiddlewareHandler => {
 
 			const metricsService = c.get("services").metricsService;
 			metricsService.increment("requests.count", 1, commonTags);
-			metricsService.increment("test.counter", 1, ["test:true"]);
 			metricsService.distribution(
 				"requests.duration_ms",
 				durationMs,
