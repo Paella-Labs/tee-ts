@@ -24,6 +24,11 @@ services:
       - SENDGRID_EMAIL_TEMPLATE_ID=${SENDGRID_EMAIL_TEMPLATE_ID}
       - MOCK_TEE_SECRET=${MOCK_TEE_SECRET}
       - ACCESS_SECRET=${ACCESS_SECRET}
+      - DD_SERVICE=${DD_SERVICE}
+      - DD_ENV=${DD_ENV}
+      - DD_VERSION=${DD_VERSION}
+      - DATADOG_API_KEY=${DD_API_KEY}
+      - DD_METRICS_ENABLED=${DD_METRICS_ENABLED:-true}
     user: root
     volumes:
       - /var/run/tappd.sock:/var/run/tappd.sock
@@ -49,7 +54,6 @@ services:
       retries: 3
       start_period: 10s
     ports:
-      - "80:80"
       - "443:443"
     environment:
       - SSL_CERTIFICATE=${SSL_CERTIFICATE}
