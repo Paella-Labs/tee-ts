@@ -7,18 +7,7 @@ const isTTY = process.stdout.isTTY;
 
 const logger = winston.createLogger({
 	level: env.LOG_LEVEL,
-	format: combine(
-		errors({ stack: true }),
-		timestamp(),
-		env.FORCE_JSON_LOGS === "true" || !isTTY
-			? json()
-			: winston.format.prettyPrint({ colorize: true, depth: 3 }),
-	),
-	defaultMeta: {
-		service: env.DD_SERVICE,
-		env: env.DD_ENV,
-		version: env.DD_VERSION,
-	},
+	format: combine(errors({ stack: true }), timestamp(), json()),
 	transports: [new winston.transports.Console()],
 });
 

@@ -28,12 +28,10 @@
 		"@phala/dstack-sdk": "^0.1.11",
 		"@sendgrid/mail": "8.1.5",
 		"@solana/web3.js": "^1.98.2",
-		"@types/uuid": "^10.0.0",
 		"datadog-metrics": "^0.12.1",
 		"ethereum-cryptography": "^3.2.0",
 		"hono": "^4.7.10",
 		"shamir-secret-sharing": "0.0.4",
-		"uuid": "^11.1.0",
 		"winston": "^3.17.0",
 		"zod": "3.24.3"
 	}

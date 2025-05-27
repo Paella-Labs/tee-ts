@@ -14,7 +14,6 @@ export const ENVSchema = z.object({
 	MOCK_TEE_SECRET: z.string(),
 	ACCESS_SECRET: z.string().min(1, { message: "ACCESS_SECRET is required" }),
 	LOG_LEVEL: z.string().optional().default("info"),
-	FORCE_JSON_LOGS: z.string().optional().default("false"),
 	DD_SERVICE: z.string(),
 	DD_ENV: z.string().default("production"),
 	DD_VERSION: z.string().default("v1"),

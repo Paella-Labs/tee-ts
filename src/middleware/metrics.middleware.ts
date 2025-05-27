@@ -3,14 +3,6 @@ import type { AppContext } from "../types";
 
 /**
  * Hono middleware to send HTTP request metrics to Datadog via the DatadogMetricsService.
- *
- * Metrics sent:
- * - `crossmint_tee.requests.count`: Counter for total requests.
- * Tags: `method`, `route`, `status_code`, `status_category`
- * - `crossmint_tee.requests.duration_ms`: Distribution of request durations.
- * Tags: `method`, `route`, `status_code`, `status_category`
- * - `crossmint_tee.requests.errors.count`: Counter for requests resulting in errors (4xx, 5xx).
- * Tags: `method`, `route`, `status_code`, `status_category`
  */
 export const httpMetricsMiddleware = (): MiddlewareHandler => {
 	return async (c: AppContext, next: () => Promise<void>) => {
