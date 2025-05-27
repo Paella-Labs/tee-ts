@@ -1,19 +1,22 @@
-import type { ENVSchema } from "../config";
+import type { EnvConfig } from "../config";
+import type { ServiceInstances } from "../types";
 import { EncryptionService } from "./encryption.service";
 import { TrustedService } from "./trusted.service";
 import { InMemoryOTPService } from "./otp.service";
 import { KeyService } from "./key.service";
 import { SendgridEmailService } from "./email.service";
+import { DatadogMetricsService } from "./metrics.service";
 import type { z } from "zod";
 
 interface ServiceContainer {
 	trustedService: TrustedService;
 	encryptionService: EncryptionService;
+	metricsService: DatadogMetricsService;
 }
 
 export async function initializeServices(
-	env: z.infer<typeof ENVSchema>,
-): Promise<ServiceContainer> {
+	env: EnvConfig,
+): Promise<ServiceInstances> {
 	console.log("Initializing services...");
 
 	// Initialize encryption service
@@ -44,9 +47,14 @@ export async function initializeServices(
 		encryptionService,
 	);
 
+	// Initialize Metrics service
+	const metricsService = DatadogMetricsService.getInstance(env);
+	console.log("Metrics service initialized successfully");
+
 	// Return all services in a container
 	return {
 		trustedService,
 		encryptionService,
+		metricsService,
 	};
 }

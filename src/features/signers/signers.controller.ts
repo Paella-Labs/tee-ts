@@ -11,6 +11,7 @@ import {
 	derivePublicKeyHandler,
 	startOnboardingHandler,
 } from "./signers.handler";
+import { authMiddleware } from "middleware/auth.middleware";
 const signer = new Hono<AppEnv>();
 
 signer.post(
@@ -59,5 +60,7 @@ signer.post(
 	}),
 	completeOnboardingHandler,
 );
+
+signer.use("*", authMiddleware());
 
 export default signer;

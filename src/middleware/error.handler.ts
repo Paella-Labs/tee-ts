@@ -4,7 +4,19 @@ import type { ErrorHandler } from "hono";
 import type { AppEnv } from "../types";
 
 export const globalErrorHandler: ErrorHandler<AppEnv> = (err, c) => {
-	console.error(`[ERROR] Request to ${c.req.path}:`, err);
+	const logger = c.get("logger");
+	logger.error(
+		`[ERROR] Request to ${c.req.method} ${c.req.path} failed: ${err.message}`,
+		{
+			error: {
+				message: err.message,
+				stack: err.stack,
+				name: err.name,
+			},
+			url: c.req.url,
+			method: c.req.method,
+		},
+	);
 
 	if (err instanceof HTTPException) {
 		return err.getResponse();

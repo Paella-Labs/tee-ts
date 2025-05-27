@@ -1,5 +1,4 @@
 import { Hono } from "hono";
-import { logger } from "hono/logger";
 import signerController from "./features/signers/signers.controller";
 
 import { env } from "./config";
@@ -9,7 +8,9 @@ import { globalErrorHandler } from "./middleware/error.handler";
 import attestationController from "./features/attestation/attestation.controller";
 import healthController from "./features/health/health.controller";
 import { initializeServices } from "./services";
-import { authMiddleware } from "middleware/auth";
+import { requestLogger } from "middleware/logger.middleware";
+import { httpMetricsMiddleware } from "middleware/metrics.middleware";
+import logger from "logging/logger";
 
 async function main() {
 	const services = await initializeServices(env);
@@ -30,13 +31,14 @@ async function main() {
 }
 
 function addMiddleware(app: Hono<AppEnv>, services: ServiceInstances) {
-	app.use("*", logger());
 	app.use("*", async (c, next) => {
 		c.set("services", services);
 		c.set("env", env);
+		c.set("logger", logger);
 		await next();
 	});
-	app.use("*", authMiddleware());
+	app.use("*", httpMetricsMiddleware());
+	app.use("*", requestLogger());
 }
 
 function addRoutes(app: Hono<AppEnv>) {
