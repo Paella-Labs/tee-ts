@@ -1,5 +1,4 @@
 import { Hono } from "hono";
-import { logger } from "hono/logger";
 import signerController from "./features/signers/signers.controller";
 
 import { env } from "./config";
@@ -9,54 +8,58 @@ import { globalErrorHandler } from "./middleware/error.handler";
 import attestationController from "./features/attestation/attestation.controller";
 import healthController from "./features/health/health.controller";
 import { initializeServices } from "./services";
-import { authMiddleware } from "middleware/auth";
+import { setupLogging } from "./logging/utils";
+import { requestLogger } from "middleware/logger.middleware";
+import { httpMetricsMiddleware } from "middleware/metrics.middleware";
 
 async function main() {
-	const services = await initializeServices(env);
-	const app = new Hono<AppEnv>();
+  setupLogging();
 
-	addMiddleware(app, services);
-	addRoutes(app);
-	addDefaultHandlers(app);
+  const services = await initializeServices(env);
+  const app = new Hono<AppEnv>();
 
-	const server = {
-		port: env.PORT,
-		fetch: app.fetch,
-	};
+  addMiddleware(app, services);
+  addRoutes(app);
+  addDefaultHandlers(app);
 
-	console.log(`Server listening on http://localhost:${env.PORT} ...`);
+  const server = {
+    port: env.PORT,
+    fetch: app.fetch,
+  };
 
-	return server;
+  console.log(`Server listening on http://localhost:${env.PORT} ...`);
+
+  return server;
 }
 
 function addMiddleware(app: Hono<AppEnv>, services: ServiceInstances) {
-	app.use("*", logger());
-	app.use("*", async (c, next) => {
-		c.set("services", services);
-		c.set("env", env);
-		await next();
-	});
-	app.use("*", authMiddleware());
+  app.use("*", async (c, next) => {
+    c.set("services", services);
+    c.set("env", env);
+    await next();
+  });
+  app.use("*", httpMetricsMiddleware());
+  app.use("*", requestLogger());
 }
 
 function addRoutes(app: Hono<AppEnv>) {
-	app.route("/health", healthController);
-	app.route("/v1/signers", signerController);
-	app.route("/v1/attestation", attestationController);
+  app.route("/health", healthController);
+  app.route("/v1/signers", signerController);
+  app.route("/v1/attestation", attestationController);
 }
 
 function addDefaultHandlers(app: Hono<AppEnv>) {
-	app.notFound((c) => {
-		return c.json(
-			{
-				error: "Not Found",
-				message: `Route ${c.req.method} ${c.req.path} not found.`,
-			},
-			404,
-		);
-	});
+  app.notFound((c) => {
+    return c.json(
+      {
+        error: "Not Found",
+        message: `Route ${c.req.method} ${c.req.path} not found.`,
+      },
+      404
+    );
+  });
 
-	app.onError(globalErrorHandler);
+  app.onError(globalErrorHandler);
 }
 
 // Start the server

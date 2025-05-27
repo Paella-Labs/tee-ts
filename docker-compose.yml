@@ -1,7 +1,10 @@
 services:
   tee-ts:
-    image: ${DOCKER_IMAGE:-xmregistry/crossmint-ts-tee:latest}
+    # image: ${DOCKER_IMAGE:-xmregistry/crossmint-ts-tee:latest}
     container_name: tee-ts
+    build:
+      context: .
+      dockerfile: Dockerfile
     restart: unless-stopped
     healthcheck:
       test:
@@ -24,6 +27,11 @@ services:
       - SENDGRID_EMAIL_TEMPLATE_ID=${SENDGRID_EMAIL_TEMPLATE_ID}
       - MOCK_TEE_SECRET=${MOCK_TEE_SECRET}
       - ACCESS_SECRET=${ACCESS_SECRET}
+      - DD_SERVICE=${DD_SERVICE}
+      - DD_ENV=${DD_ENV}
+      - DD_VERSION=${DD_VERSION}
+      - DATADOG_API_KEY=${DD_API_KEY}
+      - DD_METRICS_ENABLED=${DD_METRICS_ENABLED:-true}
     user: root
     volumes:
       - /var/run/tappd.sock:/var/run/tappd.sock
@@ -31,7 +39,10 @@ services:
       - tee-ts-network
 
   nginx:
-    image: ${NGINX_DOCKER_IMAGE:-xmregistry/crossmint-ts-tee-nginx:latest}
+    # image: ${NGINX_DOCKER_IMAGE:-xmregistry/crossmint-ts-tee-nginx:latest}
+    build:
+      context: .
+      dockerfile: nginx.Dockerfile
     container_name: nginx-proxy
     restart: unless-stopped
     healthcheck:
@@ -49,7 +60,6 @@ services:
       retries: 3
       start_period: 10s
     ports:
-      - "80:80"
       - "443:443"
     environment:
       - SSL_CERTIFICATE=${SSL_CERTIFICATE}
