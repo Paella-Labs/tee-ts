@@ -5,12 +5,9 @@ import type { AppEnv } from "../types";
 import customLogger from "../logging/logger";
 
 export const globalErrorHandler: ErrorHandler<AppEnv> = (err, c) => {
-	const customRequestId = c.get("requestId");
-
 	customLogger.error(
 		`[ERROR] Request to ${c.req.method} ${c.req.path} failed: ${err.message}`,
 		{
-			requestId: customRequestId,
 			error: {
 				message: err.message,
 				stack: err.stack,

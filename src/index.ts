@@ -8,13 +8,10 @@ import { globalErrorHandler } from "./middleware/error.handler";
 import attestationController from "./features/attestation/attestation.controller";
 import healthController from "./features/health/health.controller";
 import { initializeServices } from "./services";
-import { setupLogging } from "./logging/utils";
 import { requestLogger } from "middleware/logger.middleware";
 import { httpMetricsMiddleware } from "middleware/metrics.middleware";
 
 async function main() {
-	setupLogging();
-
 	const services = await initializeServices(env);
 	const app = new Hono<AppEnv>();
 

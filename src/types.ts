@@ -14,7 +14,6 @@ export type AppEnv = {
 	Variables: {
 		services: ServiceInstances;
 		env: EnvConfig;
-		requestId: string;
 		encryption?: {
 			decryptedBody: unknown;
 			clientPublicKeyForResponse: string;

@@ -6,10 +6,8 @@ export const requestLogger = (): MiddlewareHandler => {
 		const startTime = Date.now();
 		const requestUrl = c.req.url;
 		const method = c.req.method;
-		const customRequestId = c.get("requestId");
 
 		logger.info(`--> ${method} ${requestUrl}`, {
-			requestId: customRequestId,
 			http: {
 				method: method,
 				url: requestUrl,
@@ -27,8 +25,6 @@ export const requestLogger = (): MiddlewareHandler => {
 						c.env?.REMOTE_ADDR,
 				},
 			},
-			// If you had a custom requestId:
-			// requestId: c.get('requestId'),
 		});
 
 		try {
@@ -50,7 +46,6 @@ export const requestLogger = (): MiddlewareHandler => {
 						stack: error.stack,
 						kind: error.name,
 					},
-					requestId: c.get("requestId"),
 				},
 			);
 			throw error;
@@ -67,7 +62,6 @@ export const requestLogger = (): MiddlewareHandler => {
 				duration_ms: durationMs,
 				response_content_length: c.res.headers.get("content-length"), // if available
 			},
-			requestId: c.get("requestId"), // if custom
 		};
 
 		if (statusCode >= 500) {
