@@ -6,16 +6,11 @@ import "@openzeppelin/contracts-upgradeable/proxy/utils/Initializable.sol";
 import "@openzeppelin/contracts-upgradeable/access/AccessControlUpgradeable.sol";
 import "@openzeppelin/contracts-upgradeable/proxy/utils/UUPSUpgradeable.sol";
 
-contract CrossmintAppAuth is
-    Initializable,
-    AccessControlUpgradeable,
-    UUPSUpgradeable,
-    IAppAuth
-{
+contract CrossmintAppAuth is Initializable, AccessControlUpgradeable, UUPSUpgradeable, IAppAuth {
     // Role definitions
     bytes32 public constant UPGRADER_ROLE = keccak256("UPGRADER_ROLE");
     bytes32 public constant MANAGER_ROLE = keccak256("MANAGER_ROLE");
-    
+
     // App ID this contract is managing
     address public appId;
 
@@ -32,10 +27,10 @@ contract CrossmintAppAuth is
     mapping(bytes32 => bool) public allowedDeviceIds;
 
     // Events
-    event ComposeHashAdded(bytes32 composeHash, string reason);
+    event ComposeHashAdded(bytes32 composeHash, string tag);
     event ComposeHashRemoved(bytes32 composeHash);
     event UpgradesDisabled();
-    event DeviceAdded(bytes32 deviceId, string reason);
+    event DeviceAdded(bytes32 deviceId);
     event DeviceRemoved(bytes32 deviceId);
     event AllowAnyDeviceSet(bool allowAny);
 
@@ -50,18 +45,21 @@ contract CrossmintAppAuth is
         address _appId,
         bool _disableUpgrades,
         bool _allowAnyDevice
-    ) public initializer {
+    )
+        public
+        initializer
+    {
         require(initialAdmin != address(0), "Invalid admin address");
         require(_appId != address(0), "Invalid app ID");
-        
+
         __AccessControl_init();
         __UUPSUpgradeable_init();
-        
+
         // Set up roles
         _grantRole(DEFAULT_ADMIN_ROLE, initialAdmin);
         _grantRole(UPGRADER_ROLE, initialAdmin);
         _grantRole(MANAGER_ROLE, initialAdmin);
-        
+
         appId = _appId;
         _upgradesDisabled = _disableUpgrades;
         allowAnyDevice = _allowAnyDevice;
@@ -74,10 +72,10 @@ contract CrossmintAppAuth is
     }
 
     // Add a compose hash to allowed list
-    function addComposeHash(bytes32 composeHash, string calldata reason) external onlyRole(MANAGER_ROLE) {
-        require(bytes(reason).length > 0, "Reason must be provided");
+    function addComposeHash(bytes32 composeHash, string calldata tag) external onlyRole(MANAGER_ROLE) {
+        require(bytes(tag).length > 0, "Tag must be provided");
         allowedComposeHashes[composeHash] = true;
-        emit ComposeHashAdded(composeHash, reason);
+        emit ComposeHashAdded(composeHash, tag);
     }
 
     // Remove a compose hash from allowed list
@@ -93,10 +91,9 @@ contract CrossmintAppAuth is
     }
 
     // Add a device ID to allowed list
-    function addDevice(bytes32 deviceId, string calldata reason) external onlyRole(MANAGER_ROLE) {
-        require(bytes(reason).length > 0, "Reason must be provided");
+    function addDevice(bytes32 deviceId) external onlyRole(MANAGER_ROLE) {
         allowedDeviceIds[deviceId] = true;
-        emit DeviceAdded(deviceId, reason);
+        emit DeviceAdded(deviceId);
     }
 
     // Remove a device ID from allowed list
@@ -106,9 +103,12 @@ contract CrossmintAppAuth is
     }
 
     // Check if an app is allowed to boot
-    function isAppAllowed(
-        IAppAuth.AppBootInfo calldata bootInfo
-    ) external view override returns (bool isAllowed, string memory reason) {
+    function isAppAllowed(IAppAuth.AppBootInfo calldata bootInfo)
+        external
+        view
+        override
+        returns (bool isAllowed, string memory reason)
+    {
         // Check if this controller is responsible for the app
         if (bootInfo.appId != appId) {
             return (false, "Wrong app controller");
@@ -135,4 +135,4 @@ contract CrossmintAppAuth is
 
     // Add storage gap for upgradeable contracts
     uint256[50] private __gap;
-} 
+}
