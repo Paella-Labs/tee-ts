@@ -27,7 +27,7 @@ services:
       - DD_SERVICE=${DD_SERVICE}
       - DD_ENV=${DD_ENV}
       - DD_VERSION=${DD_VERSION}
-      - DATADOG_API_KEY=${DD_API_KEY}
+      - DATADOG_API_KEY=${DATADOG_API_KEY}
       - DD_METRICS_ENABLED=${DD_METRICS_ENABLED:-true}
     user: root
     volumes:
