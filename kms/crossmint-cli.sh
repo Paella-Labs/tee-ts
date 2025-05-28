@@ -47,18 +47,6 @@ get_network_config() {
         echo "explorer_api_key_env="
         echo "supported=true"
         ;;
-    mainnet)
-        echo "rpc_url=${MAINNET_RPC_URL:-https://eth.llamarpc.com}"
-        echo "explorer_name=etherscan"
-        echo "explorer_api_key_env=ETHERSCAN_API_KEY"
-        echo "supported=true"
-        ;;
-    sepolia)
-        echo "rpc_url=${SEPOLIA_RPC_URL:-https://ethereum-sepolia.publicnode.com}"
-        echo "explorer_name=etherscan"
-        echo "explorer_api_key_env=ETHERSCAN_API_KEY"
-        echo "supported=true"
-        ;;
     base)
         echo "rpc_url=${BASE_RPC_URL:-https://mainnet.base.org}"
         echo "explorer_name=basescan"
@@ -69,24 +57,6 @@ get_network_config() {
         echo "rpc_url=${BASE_SEPOLIA_RPC_URL:-https://sepolia.base.org}"
         echo "explorer_name=basescan"
         echo "explorer_api_key_env=BASESCAN_API_KEY"
-        echo "supported=true"
-        ;;
-    arbitrum)
-        echo "rpc_url=${ARBITRUM_RPC_URL:-https://arb1.arbitrum.io/rpc}"
-        echo "explorer_name=arbiscan"
-        echo "explorer_api_key_env=ARBISCAN_API_KEY"
-        echo "supported=true"
-        ;;
-    optimism)
-        echo "rpc_url=${OPTIMISM_RPC_URL:-https://mainnet.optimism.io}"
-        echo "explorer_name=optimism"
-        echo "explorer_api_key_env=OPTIMISM_API_KEY"
-        echo "supported=true"
-        ;;
-    polygon)
-        echo "rpc_url=${POLYGON_RPC_URL:-https://polygon-rpc.com}"
-        echo "explorer_name=polygonscan"
-        echo "explorer_api_key_env=POLYGONSCAN_API_KEY"
         echo "supported=true"
         ;;
     *)
@@ -232,22 +202,22 @@ show_usage() {
     echo ""
     echo "Examples:"
     echo "  # Deploy contract with private key"
-    echo "  APP_ID=0x1234... PRIVATE_KEY=0x... $0 deploy --network sepolia --broadcast"
+    echo "  APP_ID=0x1234... PRIVATE_KEY=0x... $0 deploy --network base-sepolia --broadcast"
     echo ""
     echo "  # Deploy contract with Fireblocks"
     echo "  APP_ID=0x1234... VAULT_ACCOUNT_ID=123 VAULT_ADDRESS=0x... \\"
-    echo "  $0 deploy --network sepolia --broadcast --fireblocks"
+    echo "  $0 deploy --network base-sepolia --broadcast --fireblocks"
     echo ""
     echo "  # Add compose hash"
     echo "  PROXY_ADDRESS=0x1234... COMPOSE_HASH=0x5678... TAG=\"v1.2.3\" \\"
-    echo "  $0 add-hash --network sepolia --broadcast"
+    echo "  $0 add-hash --network base-sepolia --broadcast"
     echo ""
     echo "  # Add device"
     echo "  PROXY_ADDRESS=0x1234... DEVICE_ID=0x5678... \\"
-    echo "  $0 add-device --network sepolia --broadcast"
+    echo "  $0 add-device --network base-sepolia --broadcast"
     echo ""
     echo "  # Upgrade contract"
-    echo "  PROXY_ADDRESS=0x1234... $0 upgrade --network sepolia --broadcast"
+    echo "  PROXY_ADDRESS=0x1234... $0 upgrade --network base-sepolia --broadcast"
     echo ""
     echo "  # Get network configuration"
     echo "  $0 get-config --network base-sepolia"
@@ -428,7 +398,7 @@ NETWORK_SUPPORTED=$(echo "$NETWORK_CONFIG" | grep "supported=" | cut -d'=' -f2)
 
 if [[ "$NETWORK_SUPPORTED" != "true" ]]; then
     print_error "Unsupported network: $NETWORK"
-    echo "Supported networks: localhost, mainnet, sepolia, base, base-sepolia, arbitrum, optimism, polygon"
+    echo "Supported networks: localhost, base, base-sepolia"
     exit 1
 fi
 
