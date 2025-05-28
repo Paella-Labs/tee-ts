@@ -18,6 +18,7 @@ NETWORK="localhost"
 BROADCAST=false
 VERIFY=false
 DRY_RUN=false
+USE_FIREBLOCKS=false
 
 # Function to print colored output
 print_info() {
@@ -53,6 +54,7 @@ show_usage() {
     echo "  -b, --broadcast          Broadcast transactions (default: false)"
     echo "  -v, --verify             Verify contracts on block explorer (default: false)"
     echo "  -d, --dry-run           Simulate without broadcasting (default: false)"
+    echo "  --fireblocks            Use Fireblocks vault for signing (default: false)"
     echo "  -h, --help              Show this help message"
     echo ""
     echo "Environment Variables:"
@@ -75,9 +77,17 @@ show_usage() {
     echo "  PRIVATE_KEY             Private key for deployment account"
     echo "  MNEMONIC                12-word mnemonic phrase"
     echo ""
+    echo "For Fireblocks (when using --fireblocks):"
+    echo "  VAULT_ACCOUNT_ID        Fireblocks vault account ID [REQUIRED]"
+    echo "  VAULT_ADDRESS           Fireblocks vault address [REQUIRED]"
+    echo ""
     echo "Examples:"
-    echo "  # Deploy contract"
+    echo "  # Deploy contract with private key"
     echo "  APP_ID=0x1234... PRIVATE_KEY=0x... $0 deploy --network sepolia --broadcast"
+    echo ""
+    echo "  # Deploy contract with Fireblocks"
+    echo "  APP_ID=0x1234... VAULT_ACCOUNT_ID=123 VAULT_ADDRESS=0x... \\"
+    echo "  $0 deploy --network sepolia --broadcast --fireblocks"
     echo ""
     echo "  # Add compose hash"
     echo "  PROXY_ADDRESS=0x1234... COMPOSE_HASH=0x5678... TAG=\"v1.2.3\" \\"
@@ -124,6 +134,10 @@ while [[ $# -gt 0 ]]; do
         ;;
     -d | --dry-run)
         DRY_RUN=true
+        shift
+        ;;
+    --fireblocks)
+        USE_FIREBLOCKS=true
         shift
         ;;
     -h | --help)
@@ -232,11 +246,27 @@ upgrade)
     ;;
 esac
 
-# Check for private key or mnemonic if broadcasting
+# Check for authentication if broadcasting
 if [[ "$BROADCAST" == true && "$DRY_RUN" == false ]]; then
-    if [[ -z "$PRIVATE_KEY" && -z "$MNEMONIC" ]]; then
-        print_error "PRIVATE_KEY or MNEMONIC environment variable is required for broadcasting"
-        exit 1
+    if [[ "$USE_FIREBLOCKS" == true ]]; then
+        if [[ -z "$VAULT_ACCOUNT_ID" ]]; then
+            print_error "VAULT_ACCOUNT_ID environment variable is required when using --fireblocks"
+            exit 1
+        fi
+        if [[ -z "$VAULT_ADDRESS" ]]; then
+            print_error "VAULT_ADDRESS environment variable is required when using --fireblocks"
+            exit 1
+        fi
+        # Validate vault address format
+        if [[ ! "$VAULT_ADDRESS" =~ ^0x[a-fA-F0-9]{40}$ ]]; then
+            print_error "VAULT_ADDRESS must be a valid 40-character hex string starting with 0x"
+            exit 1
+        fi
+    else
+        if [[ -z "$PRIVATE_KEY" && -z "$MNEMONIC" ]]; then
+            print_error "PRIVATE_KEY or MNEMONIC environment variable is required for broadcasting (or use --fireblocks)"
+            exit 1
+        fi
     fi
 fi
 
@@ -270,6 +300,11 @@ deploy)
     echo "Broadcast: $BROADCAST"
     echo "Verify: $VERIFY"
     echo "Dry Run: $DRY_RUN"
+    echo "Use Fireblocks: $USE_FIREBLOCKS"
+    if [[ "$USE_FIREBLOCKS" == true ]]; then
+        echo "Vault Account ID: $VAULT_ACCOUNT_ID"
+        echo "Vault Address: $VAULT_ADDRESS"
+    fi
     echo ""
     echo "App ID: $APP_ID"
     echo "Initial Admin: ${INITIAL_ADMIN:-deployer}"
@@ -289,6 +324,11 @@ add-hash)
     echo "RPC URL: $RPC_URL"
     echo "Broadcast: $BROADCAST"
     echo "Dry Run: $DRY_RUN"
+    echo "Use Fireblocks: $USE_FIREBLOCKS"
+    if [[ "$USE_FIREBLOCKS" == true ]]; then
+        echo "Vault Account ID: $VAULT_ACCOUNT_ID"
+        echo "Vault Address: $VAULT_ADDRESS"
+    fi
     echo ""
     echo "Proxy Address: $PROXY_ADDRESS"
     echo "Compose Hash: $COMPOSE_HASH"
@@ -303,6 +343,11 @@ add-device)
     echo "RPC URL: $RPC_URL"
     echo "Broadcast: $BROADCAST"
     echo "Dry Run: $DRY_RUN"
+    echo "Use Fireblocks: $USE_FIREBLOCKS"
+    if [[ "$USE_FIREBLOCKS" == true ]]; then
+        echo "Vault Account ID: $VAULT_ACCOUNT_ID"
+        echo "Vault Address: $VAULT_ADDRESS"
+    fi
     echo ""
     echo "Proxy Address: $PROXY_ADDRESS"
     echo "Device ID: $DEVICE_ID"
@@ -316,6 +361,11 @@ upgrade)
     echo "RPC URL: $RPC_URL"
     echo "Broadcast: $BROADCAST"
     echo "Dry Run: $DRY_RUN"
+    echo "Use Fireblocks: $USE_FIREBLOCKS"
+    if [[ "$USE_FIREBLOCKS" == true ]]; then
+        echo "Vault Account ID: $VAULT_ACCOUNT_ID"
+        echo "Vault Address: $VAULT_ADDRESS"
+    fi
     echo ""
     echo "Proxy Address: $PROXY_ADDRESS"
     ;;
@@ -397,8 +447,28 @@ if [[ "$BROADCAST" == true && "$DRY_RUN" == false ]]; then
     FORGE_CMD="$FORGE_CMD --broadcast"
 fi
 
-# Add private key if provided
-if [[ -n "$PRIVATE_KEY" ]]; then
+# Handle authentication
+if [[ "$USE_FIREBLOCKS" == true ]]; then
+    # Check if fireblocks-json-rpc is available
+    if ! command -v fireblocks-json-rpc &>/dev/null; then
+        print_error "fireblocks-json-rpc command not found"
+        echo "Please install fireblocks-json-rpc to use the --fireblocks option"
+        echo "See: https://github.com/fireblocks/fireblocks-json-rpc"
+        exit 1
+    fi
+
+    # Set ETH_FROM for Fireblocks vault address
+    export ETH_FROM="$VAULT_ADDRESS"
+    print_info "Setting ETH_FROM to Fireblocks vault address: $ETH_FROM"
+
+    # Wrap the forge command with fireblocks-json-rpc
+    # The RPC URL is passed directly to fireblocks-json-rpc
+    FIREBLOCKS_CMD="fireblocks-json-rpc -v --http --vaultAccountIds $VAULT_ACCOUNT_ID --"
+    FORGE_CMD="$FIREBLOCKS_CMD $FORGE_CMD"
+
+    # Add Fireblocks-specific flags
+    FORGE_CMD="$FORGE_CMD --sender $VAULT_ADDRESS --unlocked --legacy --slow"
+elif [[ -n "$PRIVATE_KEY" ]]; then
     FORGE_CMD="$FORGE_CMD --private-key $PRIVATE_KEY"
     # Derive the address from the private key and set ETH_FROM so BaseScript uses the correct broadcaster
     DERIVED_ADDRESS=$(cast wallet address --private-key "$PRIVATE_KEY")
