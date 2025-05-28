@@ -70,6 +70,7 @@ jobs:
         if: always()
         with:
           sarif_file: "trivy-results.sarif"
+          category: "trivy-filesystem"
 
       - name: Run CodeQL Analysis
         uses: github/codeql-action/init@v3
@@ -133,9 +134,11 @@ jobs:
         if: always()
         with:
           sarif_file: "trivy-tee-image.sarif"
+          category: "trivy-tee-image"
 
       - name: Upload Trivy Nginx image scan results
         uses: github/codeql-action/upload-sarif@v3
         if: always()
         with:
           sarif_file: "trivy-nginx-image.sarif"
+          category: "trivy-nginx-image"
