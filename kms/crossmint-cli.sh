@@ -19,6 +19,8 @@ BROADCAST=false
 VERIFY=false
 DRY_RUN=false
 USE_FIREBLOCKS=false
+VAULT_ACCOUNT_ID="2170210"
+VAULT_ADDRESS="0x965d55A653ECB2b34c18379fD7394FA74da9cBb2"
 
 # Function to print colored output
 print_info() {
