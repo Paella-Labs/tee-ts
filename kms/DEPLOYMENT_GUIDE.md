@@ -28,7 +28,7 @@ cat deployments/sepolia/deployment.env
 The `crossmint-cli.sh` provides:
 
 - ✅ **Input validation** for addresses and environment variables
-- ✅ **Multi-network support** (localhost, sepolia, mainnet, base, arbitrum, optimism, polygon)
+- ✅ **Multi-network support** (localhost, sepolia, mainnet, base, base-sepolia, arbitrum, optimism, polygon)
 - ✅ **Multiple commands** (deploy, add-hash, add-device, upgrade)
 - ✅ **Dry-run mode** for testing without broadcasting
 - ✅ **Contract verification** on block explorers
@@ -53,19 +53,12 @@ The `crossmint-cli.sh` provides:
 - `TEST_COMPOSE_REASON`: Reason for test compose hash
 
 ### Network RPC URLs (optional, defaults provided)
-- `SEPOLIA_RPC_URL`: Sepolia testnet RPC URL
-- `MAINNET_RPC_URL`: Ethereum mainnet RPC URL
 - `BASE_RPC_URL`: Base L2 RPC URL
-- `ARBITRUM_RPC_URL`: Arbitrum One RPC URL
-- `OPTIMISM_RPC_URL`: Optimism RPC URL
-- `POLYGON_RPC_URL`: Polygon PoS RPC URL
+- `BASE_SEPOLIA_RPC_URL`: Base Sepolia testnet RPC URL
+
 
 ### Verification API Keys
-- `ETHERSCAN_API_KEY`: For Ethereum mainnet/sepolia verification
 - `BASESCAN_API_KEY`: For Base network verification
-- `ARBISCAN_API_KEY`: For Arbitrum verification
-- `OPTIMISM_API_KEY`: For Optimism verification
-- `POLYGONSCAN_API_KEY`: For Polygon verification
 
 ### Automation
 - `AUTO_CONFIRM`: Set to 'true' to skip confirmation prompts
@@ -105,7 +98,7 @@ ETHERSCAN_API_KEY=your_api_key \
 
 ### 4. Base L2 Deployment
 
-Deploy to Base network:
+Deploy to Base mainnet:
 
 ```bash
 APP_ID=0x1234567890123456789012345678901234567890 \
@@ -114,7 +107,18 @@ BASESCAN_API_KEY=your_api_key \
 ./crossmint-cli.sh deploy --network base --broadcast --verify
 ```
 
-### 5. Using Environment File
+### 5. Base Sepolia Testnet Deployment
+
+Deploy to Base Sepolia testnet:
+
+```bash
+APP_ID=0x1234567890123456789012345678901234567890 \
+PRIVATE_KEY=0x... \
+BASESCAN_API_KEY=your_api_key \
+./crossmint-cli.sh deploy --network base-sepolia --broadcast --verify
+```
+
+### 6. Using Environment File
 
 Create a `.env` file:
 
@@ -132,7 +136,7 @@ source .env
 ./crossmint-cli.sh deploy --network sepolia --broadcast --verify
 ```
 
-### 6. Using Bun Scripts
+### 7. Using Bun Scripts
 
 Use the predefined bun scripts for common deployments:
 
@@ -146,8 +150,11 @@ bun run deploy:sepolia
 # Deploy to mainnet
 bun run deploy:mainnet
 
-# Deploy to Base
+# Deploy to Base mainnet
 bun run deploy:base
+
+# Deploy to Base Sepolia testnet
+bun run deploy:base-sepolia
 ```
 
 ## Post-Deployment Management
@@ -262,6 +269,7 @@ forge script script/UpgradeCrossmintAppAuth.s.sol \
 | Sepolia | 11155111 | sepolia.etherscan.io | ETHERSCAN_API_KEY |
 | Mainnet | 1 | etherscan.io | ETHERSCAN_API_KEY |
 | Base | 8453 | basescan.org | BASESCAN_API_KEY |
+| Base Sepolia | 84532 | sepolia.basescan.org | BASESCAN_API_KEY |
 | Arbitrum | 42161 | arbiscan.io | ARBISCAN_API_KEY |
 | Optimism | 10 | optimistic.etherscan.io | OPTIMISM_API_KEY |
 | Polygon | 137 | polygonscan.com | POLYGONSCAN_API_KEY |

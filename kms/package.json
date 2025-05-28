@@ -40,6 +40,7 @@
     "deploy": "./crossmint-cli.sh deploy",
     "deploy:localhost": "./crossmint-cli.sh deploy --network localhost --broadcast",
     "deploy:base": "./crossmint-cli.sh deploy --network base --broadcast",
+    "deploy:base-sepolia": "./crossmint-cli.sh deploy --network base-sepolia --broadcast",
     "add-hash": "./crossmint-cli.sh add-hash --broadcast",
     "add-device": "./crossmint-cli.sh add-device --broadcast",
     "upgrade": "./crossmint-cli.sh upgrade --broadcast"

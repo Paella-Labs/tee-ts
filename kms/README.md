@@ -161,6 +161,7 @@ PRIVATE_KEY=0x... \
 bun run deploy:sepolia
 bun run deploy:mainnet
 bun run deploy:base
+bun run deploy:base-sepolia
 
 # Management (requires environment variables)
 bun run add-hash --network sepolia
@@ -206,6 +207,7 @@ The CrossmintAppAuth CLI supports the following networks out of the box:
 - **sepolia** (Ethereum testnet)
 - **mainnet** (Ethereum mainnet)
 - **base** (Base L2)
+- **base-sepolia** (Base Sepolia testnet)
 - **arbitrum** (Arbitrum One)
 - **optimism** (Optimism)
 - **polygon** (Polygon PoS)

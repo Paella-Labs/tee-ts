@@ -161,8 +161,8 @@ deploy)
     fi
 
     # Validate APP_ID format
-    if [[ ! "$APP_ID" =~ ^0x[a-fA-F0-9]{40}$ ]]; then
-        print_error "APP_ID must be a valid 40-character hex string starting with 0x"
+    if [[ -z "$APP_ID" ]]; then
+        print_error "APP_ID must be not empty   "
         exit 1
     fi
     ;;
@@ -248,9 +248,12 @@ localhost)
 base)
     RPC_URL="${BASE_RPC_URL:-https://mainnet.base.org}"
     ;;
+base-sepolia)
+    RPC_URL="${BASE_SEPOLIA_RPC_URL:-https://sepolia.base.org}"
+    ;;
 *)
     print_error "Unsupported network: $NETWORK"
-    echo "Supported networks: localhost, sepolia, mainnet, base, arbitrum, optimism, polygon"
+    echo "Supported networks: localhost, sepolia, mainnet, base, base-sepolia, arbitrum, optimism, polygon"
     exit 1
     ;;
 esac
@@ -394,6 +397,15 @@ if [[ "$BROADCAST" == true && "$DRY_RUN" == false ]]; then
     FORGE_CMD="$FORGE_CMD --broadcast"
 fi
 
+# Add private key if provided
+if [[ -n "$PRIVATE_KEY" ]]; then
+    FORGE_CMD="$FORGE_CMD --private-key $PRIVATE_KEY"
+    # Derive the address from the private key and set ETH_FROM so BaseScript uses the correct broadcaster
+    DERIVED_ADDRESS=$(cast wallet address --private-key "$PRIVATE_KEY")
+    export ETH_FROM="$DERIVED_ADDRESS"
+    print_info "Setting ETH_FROM to derived address: $ETH_FROM"
+fi
+
 # Add verification if requested (only for deployment)
 if [[ "$VERIFY" == true && "$DRY_RUN" == false && "$COMMAND" == "deploy" ]]; then
     case $NETWORK in
@@ -405,6 +417,13 @@ if [[ "$VERIFY" == true && "$DRY_RUN" == false && "$COMMAND" == "deploy" ]]; the
         fi
         ;;
     base)
+        if [[ -n "$BASESCAN_API_KEY" ]]; then
+            FORGE_CMD="$FORGE_CMD --verify --etherscan-api-key $BASESCAN_API_KEY"
+        else
+            print_warning "BASESCAN_API_KEY not set, skipping verification"
+        fi
+        ;;
+    base-sepolia)
         if [[ -n "$BASESCAN_API_KEY" ]]; then
             FORGE_CMD="$FORGE_CMD --verify --etherscan-api-key $BASESCAN_API_KEY"
         else
