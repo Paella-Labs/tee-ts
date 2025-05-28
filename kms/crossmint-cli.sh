@@ -5,6 +5,21 @@
 
 set -e
 
+# Load environment file if specified
+load_env_file() {
+    local env_file="$1"
+    if [[ -f "$env_file" ]]; then
+        print_info "Loading environment from: $env_file"
+        # Export variables from the env file
+        set -a
+        source "$env_file"
+        set +a
+    else
+        print_error "Environment file not found: $env_file"
+        exit 1
+    fi
+}
+
 # Colors for output
 RED='\033[0;31m'
 GREEN='\033[0;32m'
@@ -19,8 +34,7 @@ BROADCAST=false
 VERIFY=false
 DRY_RUN=false
 USE_FIREBLOCKS=false
-VAULT_ACCOUNT_ID="2170210"
-VAULT_ADDRESS="0x965d55A653ECB2b34c18379fD7394FA74da9cBb2"
+ENV_FILE=""
 
 # Function to print colored output
 print_info() {
@@ -90,7 +104,7 @@ build_forge_command() {
     deploy)
         forge_cmd="forge script script/DeployCrossmintAppAuth.s.sol"
         # Export environment variables for deployment script
-        export APP_ID
+        export KMS_CONTRACT_ADDRESS
         export INITIAL_ADMIN
         export DISABLE_UPGRADES="${DISABLE_UPGRADES:-false}"
         export ALLOW_ANY_DEVICE="${ALLOW_ANY_DEVICE:-true}"
@@ -114,6 +128,12 @@ build_forge_command() {
         forge_cmd="forge script script/UpgradeCrossmintAppAuth.s.sol"
         # Export environment variables for upgrade script
         export PROXY_ADDRESS
+        ;;
+    verify-registration)
+        forge_cmd="forge script script/VerifyAppRegistration.s.sol"
+        # Export environment variables for verify registration script
+        export KMS_CONTRACT_ADDRESS
+        export APP_ID
         ;;
     *)
         print_error "Unknown command: $command"
@@ -168,6 +188,7 @@ show_usage() {
     echo "  add-hash            Add a compose hash to an existing contract"
     echo "  add-device          Add a device to an existing contract"
     echo "  upgrade             Upgrade an existing contract"
+    echo "  verify-registration Verify app registration in KMS contract"
     echo "  get-config          Show configuration for a specific network"
     echo ""
     echo "Options:"
@@ -176,12 +197,16 @@ show_usage() {
     echo "  -v, --verify             Verify contracts on block explorer (default: false)"
     echo "  -d, --dry-run           Simulate without broadcasting (default: false)"
     echo "  --fireblocks            Use Fireblocks vault for signing (default: false)"
+    echo "  --env-file FILE         Load environment variables from file"
     echo "  -h, --help              Show this help message"
     echo ""
     echo "Environment Variables:"
     echo ""
+    echo "You can provide environment variables directly or use --env-file to load from a file."
+    echo "See README-env.md for detailed environment file configuration guide."
+    echo ""
     echo "For deployment:"
-    echo "  APP_ID                  The application ID (40-character hex string) [REQUIRED]"
+    echo "  KMS_CONTRACT_ADDRESS    Address of the KMS contract to register with [REQUIRED]"
     echo "  INITIAL_ADMIN           Initial admin address (defaults to deployer)"
     echo "  DISABLE_UPGRADES        Set to 'true' to disable upgrades (default: false)"
     echo "  ALLOW_ANY_DEVICE        Set to 'false' to restrict devices (default: true)"
@@ -194,6 +219,10 @@ show_usage() {
     echo "  DEVICE_ID               Device ID to add (for add-device command) [REQUIRED]"
     echo "  TAG                     Repository version tag for adding compose hash [REQUIRED]"
     echo ""
+    echo "For verification:"
+    echo "  KMS_CONTRACT_ADDRESS    Address of the KMS contract (for verify-registration) [REQUIRED]"
+    echo "  APP_ID                  App ID to verify (for verify-registration) [REQUIRED]"
+    echo ""
     echo "Authentication (choose one):"
     echo "  PRIVATE_KEY             Private key for deployment account"
     echo ""
@@ -203,10 +232,13 @@ show_usage() {
     echo ""
     echo "Examples:"
     echo "  # Deploy contract with private key"
-    echo "  APP_ID=0x1234... PRIVATE_KEY=0x... $0 deploy --network base-sepolia --broadcast"
+    echo "  KMS_CONTRACT_ADDRESS=0x1234... PRIVATE_KEY=0x... $0 deploy --network base-sepolia --broadcast"
+    echo ""
+    echo "  # Deploy contract using environment file"
+    echo "  $0 deploy --network base-sepolia --broadcast --env-file .env.base-sepolia"
     echo ""
     echo "  # Deploy contract with Fireblocks"
-    echo "  APP_ID=0x1234... VAULT_ACCOUNT_ID=123 VAULT_ADDRESS=0x... \\"
+    echo "  KMS_CONTRACT_ADDRESS=0x1234... VAULT_ACCOUNT_ID=123 VAULT_ADDRESS=0x... \\"
     echo "  $0 deploy --network base-sepolia --broadcast --fireblocks"
     echo ""
     echo "  # Add compose hash"
@@ -219,6 +251,10 @@ show_usage() {
     echo ""
     echo "  # Upgrade contract"
     echo "  PROXY_ADDRESS=0x1234... $0 upgrade --network base-sepolia --broadcast"
+    echo ""
+    echo "  # Verify app registration"
+    echo "  KMS_CONTRACT_ADDRESS=0x1234... APP_ID=0x5678... \\"
+    echo "  $0 verify-registration --network base-sepolia"
     echo ""
     echo "  # Get network configuration"
     echo "  $0 get-config --network base-sepolia"
@@ -263,6 +299,10 @@ while [[ $# -gt 0 ]]; do
         USE_FIREBLOCKS=true
         shift
         ;;
+    --env-file)
+        ENV_FILE="$2"
+        shift 2
+        ;;
     -h | --help)
         show_usage
         exit 0
@@ -277,29 +317,33 @@ done
 
 # Validate command
 case $COMMAND in
-deploy | add-hash | add-device | upgrade | get-config)
+deploy | add-hash | add-device | upgrade | verify-registration | get-config)
     # Valid commands
     ;;
 *)
     print_error "Unknown command: $COMMAND"
-    echo "Valid commands: deploy, add-hash, add-device, upgrade, get-config"
+    echo "Valid commands: deploy, add-hash, add-device, upgrade, verify-registration, get-config"
     show_usage
     exit 1
     ;;
 esac
 
+# Load environment file if specified
+if [[ -n "$ENV_FILE" ]]; then
+    load_env_file "$ENV_FILE"
+fi
+
 # Validate required environment variables based on command
 case $COMMAND in
 deploy)
-    if [[ -z "$APP_ID" ]]; then
-        print_error "APP_ID environment variable is required for deployment"
-        echo "Example: APP_ID=0x1234567890123456789012345678901234567890"
+    if [[ -z "$KMS_CONTRACT_ADDRESS" ]]; then
+        print_error "KMS_CONTRACT_ADDRESS environment variable is required for deployment"
         exit 1
     fi
 
-    # Validate APP_ID format
-    if [[ -z "$APP_ID" ]]; then
-        print_error "APP_ID must be not empty   "
+    # Validate KMS_CONTRACT_ADDRESS format
+    if [[ ! "$KMS_CONTRACT_ADDRESS" =~ ^0x[a-fA-F0-9]{40}$ ]]; then
+        print_error "KMS_CONTRACT_ADDRESS must be a valid 40-character hex string starting with 0x"
         exit 1
     fi
     ;;
@@ -364,6 +408,29 @@ upgrade)
     # Validate address format
     if [[ ! "$PROXY_ADDRESS" =~ ^0x[a-fA-F0-9]{40}$ ]]; then
         print_error "PROXY_ADDRESS must be a valid 40-character hex string starting with 0x"
+        exit 1
+    fi
+    ;;
+
+verify-registration)
+    if [[ -z "$KMS_CONTRACT_ADDRESS" ]]; then
+        print_error "KMS_CONTRACT_ADDRESS environment variable is required for verify-registration command"
+        exit 1
+    fi
+
+    if [[ -z "$APP_ID" ]]; then
+        print_error "APP_ID environment variable is required for verify-registration command"
+        exit 1
+    fi
+
+    # Validate address formats
+    if [[ ! "$KMS_CONTRACT_ADDRESS" =~ ^0x[a-fA-F0-9]{40}$ ]]; then
+        print_error "KMS_CONTRACT_ADDRESS must be a valid 40-character hex string starting with 0x"
+        exit 1
+    fi
+
+    if [[ ! "$APP_ID" =~ ^0x[a-fA-F0-9]{40}$ ]]; then
+        print_error "APP_ID must be a valid 40-character hex string starting with 0x"
         exit 1
     fi
     ;;
@@ -441,7 +508,7 @@ deploy)
     echo "Command: Deploy"
     print_common_config
     echo ""
-    echo "App ID: $APP_ID"
+    echo "KMS Contract Address: $KMS_CONTRACT_ADDRESS"
     echo "Initial Admin: ${INITIAL_ADMIN:-deployer}"
     echo "Disable Upgrades: ${DISABLE_UPGRADES:-false}"
     echo "Allow Any Device: ${ALLOW_ANY_DEVICE:-true}"
@@ -480,6 +547,16 @@ upgrade)
     echo ""
     echo "Proxy Address: $PROXY_ADDRESS"
     ;;
+
+verify-registration)
+    print_info "CrossmintAppAuth Registration Verification Configuration"
+    echo "======================================================"
+    echo "Command: Verify App Registration"
+    print_common_config
+    echo ""
+    echo "KMS Contract Address: $KMS_CONTRACT_ADDRESS"
+    echo "App ID: $APP_ID"
+    ;;
 esac
 echo ""
 
@@ -497,6 +574,9 @@ if [[ "$CI" != "true" && "$AUTO_CONFIRM" != "true" && "$DRY_RUN" == false ]]; th
         ;;
     upgrade)
         read -p "Do you want to upgrade this contract? (y/N): " -n 1 -r
+        ;;
+    verify-registration)
+        read -p "Do you want to verify app registration? (y/N): " -n 1 -r
         ;;
     esac
     echo
@@ -569,7 +649,7 @@ if eval "$FORGE_CMD"; then
                 cat >"$DEPLOYMENT_DIR/deployment.env" <<EOF
 # Deployment completed on $(date)
 NETWORK=$NETWORK
-APP_ID=$APP_ID
+KMS_CONTRACT_ADDRESS=$KMS_CONTRACT_ADDRESS
 INITIAL_ADMIN=${INITIAL_ADMIN:-}
 DISABLE_UPGRADES=${DISABLE_UPGRADES:-false}
 ALLOW_ANY_DEVICE=${ALLOW_ANY_DEVICE:-true}
@@ -586,6 +666,9 @@ EOF
         upgrade)
             print_success "Contract upgraded successfully!"
             ;;
+        verify-registration)
+            print_success "App registration verified successfully!"
+            ;;
         esac
     fi
 else
@@ -601,6 +684,9 @@ else
         ;;
     upgrade)
         print_error "Contract upgrade failed!"
+        ;;
+    verify-registration)
+        print_error "App registration verification failed!"
         ;;
     esac
     exit 1
