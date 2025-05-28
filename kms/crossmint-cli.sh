@@ -194,7 +194,6 @@ show_usage() {
     echo ""
     echo "Authentication (choose one):"
     echo "  PRIVATE_KEY             Private key for deployment account"
-    echo "  MNEMONIC                12-word mnemonic phrase"
     echo ""
     echo "For Fireblocks (when using --fireblocks):"
     echo "  VAULT_ACCOUNT_ID        Fireblocks vault account ID [REQUIRED]"
@@ -385,8 +384,8 @@ if [[ "$BROADCAST" == true && "$DRY_RUN" == false ]]; then
             exit 1
         fi
     else
-        if [[ -z "$PRIVATE_KEY" && -z "$MNEMONIC" ]]; then
-            print_error "PRIVATE_KEY or MNEMONIC environment variable is required for broadcasting (or use --fireblocks)"
+        if [[ -z "$PRIVATE_KEY" ]]; then
+            print_error "PRIVATE_KEY environment variable is required for broadcasting (or use --fireblocks)"
             exit 1
         fi
     fi

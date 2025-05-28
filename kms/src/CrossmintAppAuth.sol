@@ -66,9 +66,8 @@ contract CrossmintAppAuth is Initializable, AccessControlUpgradeable, UUPSUpgrad
     }
 
     // Function to authorize upgrades (required by UUPSUpgradeable)
-    function _authorizeUpgrade(address) internal view override {
+    function _authorizeUpgrade(address) internal view override onlyRole(UPGRADER_ROLE) {
         require(!_upgradesDisabled, "Upgrades are permanently disabled");
-        require(hasRole(UPGRADER_ROLE, _msgSender()), "Upgrade: Must have upgrader role");
     }
 
     // Add a compose hash to allowed list
