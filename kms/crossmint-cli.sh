@@ -37,6 +37,154 @@ print_error() {
     echo -e "${RED}❌ $1${NC}"
 }
 
+# Network configuration function
+get_network_config() {
+    local network="$1"
+    case $network in
+    localhost)
+        echo "rpc_url=http://localhost:8545"
+        echo "explorer_name=localhost"
+        echo "explorer_api_key_env="
+        echo "supported=true"
+        ;;
+    mainnet)
+        echo "rpc_url=${MAINNET_RPC_URL:-https://eth.llamarpc.com}"
+        echo "explorer_name=etherscan"
+        echo "explorer_api_key_env=ETHERSCAN_API_KEY"
+        echo "supported=true"
+        ;;
+    sepolia)
+        echo "rpc_url=${SEPOLIA_RPC_URL:-https://ethereum-sepolia.publicnode.com}"
+        echo "explorer_name=etherscan"
+        echo "explorer_api_key_env=ETHERSCAN_API_KEY"
+        echo "supported=true"
+        ;;
+    base)
+        echo "rpc_url=${BASE_RPC_URL:-https://mainnet.base.org}"
+        echo "explorer_name=basescan"
+        echo "explorer_api_key_env=BASESCAN_API_KEY"
+        echo "supported=true"
+        ;;
+    base-sepolia)
+        echo "rpc_url=${BASE_SEPOLIA_RPC_URL:-https://sepolia.base.org}"
+        echo "explorer_name=basescan"
+        echo "explorer_api_key_env=BASESCAN_API_KEY"
+        echo "supported=true"
+        ;;
+    arbitrum)
+        echo "rpc_url=${ARBITRUM_RPC_URL:-https://arb1.arbitrum.io/rpc}"
+        echo "explorer_name=arbiscan"
+        echo "explorer_api_key_env=ARBISCAN_API_KEY"
+        echo "supported=true"
+        ;;
+    optimism)
+        echo "rpc_url=${OPTIMISM_RPC_URL:-https://mainnet.optimism.io}"
+        echo "explorer_name=optimism"
+        echo "explorer_api_key_env=OPTIMISM_API_KEY"
+        echo "supported=true"
+        ;;
+    polygon)
+        echo "rpc_url=${POLYGON_RPC_URL:-https://polygon-rpc.com}"
+        echo "explorer_name=polygonscan"
+        echo "explorer_api_key_env=POLYGONSCAN_API_KEY"
+        echo "supported=true"
+        ;;
+    *)
+        echo "supported=false"
+        ;;
+    esac
+}
+
+# Function to print common configuration
+print_common_config() {
+    echo "Network: $NETWORK"
+    echo "RPC URL: $RPC_URL"
+    echo "Broadcast: $BROADCAST"
+    echo "Verify: $VERIFY"
+    echo "Dry Run: $DRY_RUN"
+    echo "Use Fireblocks: $USE_FIREBLOCKS"
+    if [[ "$USE_FIREBLOCKS" == true ]]; then
+        echo "Vault Account ID: $VAULT_ACCOUNT_ID"
+        echo "Vault Address: $VAULT_ADDRESS"
+    fi
+}
+
+# Function to build forge command for each operation
+build_forge_command() {
+    local command="$1"
+    local forge_cmd=""
+
+    case $command in
+    deploy)
+        forge_cmd="forge script script/DeployCrossmintAppAuth.s.sol"
+        # Export environment variables for deployment script
+        export APP_ID
+        export INITIAL_ADMIN
+        export DISABLE_UPGRADES="${DISABLE_UPGRADES:-false}"
+        export ALLOW_ANY_DEVICE="${ALLOW_ANY_DEVICE:-true}"
+        export TEST_COMPOSE_HASH
+        export TEST_COMPOSE_REASON
+        ;;
+    add-hash)
+        forge_cmd="forge script script/AddComposeHash.s.sol"
+        # Export environment variables for add compose hash script
+        export PROXY_ADDRESS
+        export COMPOSE_HASH
+        export TAG
+        ;;
+    add-device)
+        forge_cmd="forge script script/AddDevice.s.sol"
+        # Export environment variables for add device script
+        export PROXY_ADDRESS
+        export DEVICE_ID
+        ;;
+    upgrade)
+        forge_cmd="forge script script/UpgradeCrossmintAppAuth.s.sol"
+        # Export environment variables for upgrade script
+        export PROXY_ADDRESS
+        ;;
+    *)
+        print_error "Unknown command: $command"
+        exit 1
+        ;;
+    esac
+
+    # Add RPC URL
+    forge_cmd="$forge_cmd --rpc-url $RPC_URL"
+
+    # Add broadcast flag if not dry run
+    if [[ "$BROADCAST" == true && "$DRY_RUN" == false ]]; then
+        forge_cmd="$forge_cmd --broadcast"
+    fi
+
+    echo "$forge_cmd"
+}
+
+# Function to add verification flags based on network
+add_verification_flags() {
+    local forge_cmd="$1"
+
+    if [[ "$VERIFY" == true && "$DRY_RUN" == false && "$COMMAND" == "deploy" ]]; then
+        local config
+        config=$(get_network_config "$NETWORK")
+        local explorer_api_key_env
+        explorer_api_key_env=$(echo "$config" | grep "explorer_api_key_env=" | cut -d'=' -f2)
+
+        if [[ -n "$explorer_api_key_env" ]]; then
+            local api_key_value="${!explorer_api_key_env}"
+            if [[ -n "$api_key_value" ]]; then
+                forge_cmd="$forge_cmd --verify --etherscan-api-key $api_key_value"
+            else
+                local explorer_name
+                explorer_name=$(echo "$config" | grep "explorer_name=" | cut -d'=' -f2)
+                print_warning "${explorer_api_key_env} not set, skipping verification for ${explorer_name}"
+            fi
+        fi
+    fi
+
+    echo "$forge_cmd"
+}
+
 # Function to show usage
 show_usage() {
     echo "CrossmintAppAuth CLI - Deploy and manage CrossmintAppAuth contracts"
@@ -48,6 +196,7 @@ show_usage() {
     echo "  add-hash            Add a compose hash to an existing contract"
     echo "  add-device          Add a device to an existing contract"
     echo "  upgrade             Upgrade an existing contract"
+    echo "  get-config          Show configuration for a specific network"
     echo ""
     echo "Options:"
     echo "  -n, --network NETWORK    Network to use (default: localhost)"
@@ -99,6 +248,9 @@ show_usage() {
     echo ""
     echo "  # Upgrade contract"
     echo "  PROXY_ADDRESS=0x1234... $0 upgrade --network sepolia --broadcast"
+    echo ""
+    echo "  # Get network configuration"
+    echo "  $0 get-config --network base-sepolia"
 }
 
 # Parse command line arguments
@@ -154,12 +306,12 @@ done
 
 # Validate command
 case $COMMAND in
-deploy | add-hash | add-device | upgrade)
+deploy | add-hash | add-device | upgrade | get-config)
     # Valid commands
     ;;
 *)
     print_error "Unknown command: $COMMAND"
-    echo "Valid commands: deploy, add-hash, add-device, upgrade"
+    echo "Valid commands: deploy, add-hash, add-device, upgrade, get-config"
     show_usage
     exit 1
     ;;
@@ -270,23 +422,44 @@ if [[ "$BROADCAST" == true && "$DRY_RUN" == false ]]; then
     fi
 fi
 
-# Set RPC URL based on network
-case $NETWORK in
-localhost)
-    RPC_URL="http://localhost:8545"
-    ;;
-base)
-    RPC_URL="${BASE_RPC_URL:-https://mainnet.base.org}"
-    ;;
-base-sepolia)
-    RPC_URL="${BASE_SEPOLIA_RPC_URL:-https://sepolia.base.org}"
-    ;;
-*)
+# Get network configuration
+NETWORK_CONFIG=$(get_network_config "$NETWORK")
+NETWORK_SUPPORTED=$(echo "$NETWORK_CONFIG" | grep "supported=" | cut -d'=' -f2)
+
+if [[ "$NETWORK_SUPPORTED" != "true" ]]; then
     print_error "Unsupported network: $NETWORK"
-    echo "Supported networks: localhost, sepolia, mainnet, base, base-sepolia, arbitrum, optimism, polygon"
+    echo "Supported networks: localhost, mainnet, sepolia, base, base-sepolia, arbitrum, optimism, polygon"
     exit 1
-    ;;
-esac
+fi
+
+# Extract RPC URL from network configuration
+RPC_URL=$(echo "$NETWORK_CONFIG" | grep "rpc_url=" | cut -d'=' -f2-)
+
+# Handle get-config command
+if [[ "$COMMAND" == "get-config" ]]; then
+    print_info "Network Configuration for $NETWORK"
+    echo "=================================="
+
+    CONFIG_RPC_URL=$(echo "$NETWORK_CONFIG" | grep "rpc_url=" | cut -d'=' -f2-)
+    CONFIG_EXPLORER_NAME=$(echo "$NETWORK_CONFIG" | grep "explorer_name=" | cut -d'=' -f2)
+    CONFIG_EXPLORER_API_KEY_ENV=$(echo "$NETWORK_CONFIG" | grep "explorer_api_key_env=" | cut -d'=' -f2)
+
+    echo "RPC URL: $CONFIG_RPC_URL"
+    echo "Explorer: $CONFIG_EXPLORER_NAME"
+    if [[ -n "$CONFIG_EXPLORER_API_KEY_ENV" ]]; then
+        echo "Explorer API Key Env: $CONFIG_EXPLORER_API_KEY_ENV"
+        CONFIG_API_KEY_VALUE="${!CONFIG_EXPLORER_API_KEY_ENV}"
+        if [[ -n "$CONFIG_API_KEY_VALUE" ]]; then
+            echo "Explorer API Key: [SET]"
+        else
+            echo "Explorer API Key: [NOT SET]"
+        fi
+    else
+        echo "Explorer API Key Env: [NOT REQUIRED]"
+    fi
+    echo ""
+    exit 0
+fi
 
 # Print configuration based on command
 echo ""
@@ -295,16 +468,7 @@ deploy)
     print_info "CrossmintAppAuth Deployment Configuration"
     echo "========================================"
     echo "Command: Deploy"
-    echo "Network: $NETWORK"
-    echo "RPC URL: $RPC_URL"
-    echo "Broadcast: $BROADCAST"
-    echo "Verify: $VERIFY"
-    echo "Dry Run: $DRY_RUN"
-    echo "Use Fireblocks: $USE_FIREBLOCKS"
-    if [[ "$USE_FIREBLOCKS" == true ]]; then
-        echo "Vault Account ID: $VAULT_ACCOUNT_ID"
-        echo "Vault Address: $VAULT_ADDRESS"
-    fi
+    print_common_config
     echo ""
     echo "App ID: $APP_ID"
     echo "Initial Admin: ${INITIAL_ADMIN:-deployer}"
@@ -320,15 +484,7 @@ add-hash)
     print_info "CrossmintAppAuth Add Compose Hash Configuration"
     echo "=============================================="
     echo "Command: Add Compose Hash"
-    echo "Network: $NETWORK"
-    echo "RPC URL: $RPC_URL"
-    echo "Broadcast: $BROADCAST"
-    echo "Dry Run: $DRY_RUN"
-    echo "Use Fireblocks: $USE_FIREBLOCKS"
-    if [[ "$USE_FIREBLOCKS" == true ]]; then
-        echo "Vault Account ID: $VAULT_ACCOUNT_ID"
-        echo "Vault Address: $VAULT_ADDRESS"
-    fi
+    print_common_config
     echo ""
     echo "Proxy Address: $PROXY_ADDRESS"
     echo "Compose Hash: $COMPOSE_HASH"
@@ -339,15 +495,7 @@ add-device)
     print_info "CrossmintAppAuth Add Device Configuration"
     echo "========================================"
     echo "Command: Add Device"
-    echo "Network: $NETWORK"
-    echo "RPC URL: $RPC_URL"
-    echo "Broadcast: $BROADCAST"
-    echo "Dry Run: $DRY_RUN"
-    echo "Use Fireblocks: $USE_FIREBLOCKS"
-    if [[ "$USE_FIREBLOCKS" == true ]]; then
-        echo "Vault Account ID: $VAULT_ACCOUNT_ID"
-        echo "Vault Address: $VAULT_ADDRESS"
-    fi
+    print_common_config
     echo ""
     echo "Proxy Address: $PROXY_ADDRESS"
     echo "Device ID: $DEVICE_ID"
@@ -357,15 +505,7 @@ upgrade)
     print_info "CrossmintAppAuth Upgrade Configuration"
     echo "====================================="
     echo "Command: Upgrade Contract"
-    echo "Network: $NETWORK"
-    echo "RPC URL: $RPC_URL"
-    echo "Broadcast: $BROADCAST"
-    echo "Dry Run: $DRY_RUN"
-    echo "Use Fireblocks: $USE_FIREBLOCKS"
-    if [[ "$USE_FIREBLOCKS" == true ]]; then
-        echo "Vault Account ID: $VAULT_ACCOUNT_ID"
-        echo "Vault Address: $VAULT_ADDRESS"
-    fi
+    print_common_config
     echo ""
     echo "Proxy Address: $PROXY_ADDRESS"
     ;;
@@ -395,59 +535,10 @@ if [[ "$CI" != "true" && "$AUTO_CONFIRM" != "true" && "$DRY_RUN" == false ]]; th
     fi
 fi
 
-# Build and execute the appropriate forge command based on command
-case $COMMAND in
-deploy)
-    # Build the forge command for deployment
-    FORGE_CMD="forge script script/DeployCrossmintAppAuth.s.sol"
-    FORGE_CMD="$FORGE_CMD --rpc-url $RPC_URL"
+# Build and execute the appropriate forge command
+FORGE_CMD=$(build_forge_command "$COMMAND")
 
-    # Export environment variables for deployment script
-    export APP_ID
-    export INITIAL_ADMIN
-    export DISABLE_UPGRADES="${DISABLE_UPGRADES:-false}"
-    export ALLOW_ANY_DEVICE="${ALLOW_ANY_DEVICE:-true}"
-    export TEST_COMPOSE_HASH
-    export TEST_COMPOSE_REASON
-    ;;
-
-add-hash)
-    # Build the forge command for adding compose hash
-    FORGE_CMD="forge script script/AddComposeHash.s.sol"
-    FORGE_CMD="$FORGE_CMD --rpc-url $RPC_URL"
-
-    # Export environment variables for add compose hash script
-    export PROXY_ADDRESS
-    export COMPOSE_HASH
-    export TAG
-    ;;
-
-add-device)
-    # Build the forge command for adding device
-    FORGE_CMD="forge script script/AddDevice.s.sol"
-    FORGE_CMD="$FORGE_CMD --rpc-url $RPC_URL"
-
-    # Export environment variables for add device script
-    export PROXY_ADDRESS
-    export DEVICE_ID
-    ;;
-
-upgrade)
-    # Build the forge command for upgrading
-    FORGE_CMD="forge script script/UpgradeCrossmintAppAuth.s.sol"
-    FORGE_CMD="$FORGE_CMD --rpc-url $RPC_URL"
-
-    # Export environment variables for upgrade script
-    export PROXY_ADDRESS
-    ;;
-esac
-
-# Add broadcast flag if not dry run
-if [[ "$BROADCAST" == true && "$DRY_RUN" == false ]]; then
-    FORGE_CMD="$FORGE_CMD --broadcast"
-fi
-
-# Handle authentication
+# Handle authentication and set ETH_FROM
 if [[ "$USE_FIREBLOCKS" == true ]]; then
     # Check if fireblocks-json-rpc is available
     if ! command -v fireblocks-json-rpc &>/dev/null; then
@@ -462,7 +553,6 @@ if [[ "$USE_FIREBLOCKS" == true ]]; then
     print_info "Setting ETH_FROM to Fireblocks vault address: $ETH_FROM"
 
     # Wrap the forge command with fireblocks-json-rpc
-    # The RPC URL is passed directly to fireblocks-json-rpc
     FIREBLOCKS_CMD="fireblocks-json-rpc -v --http --vaultAccountIds $VAULT_ACCOUNT_ID --"
     FORGE_CMD="$FIREBLOCKS_CMD $FORGE_CMD"
 
@@ -476,53 +566,7 @@ elif [[ -n "$PRIVATE_KEY" ]]; then
     print_info "Setting ETH_FROM to derived address: $ETH_FROM"
 fi
 
-# Add verification if requested (only for deployment)
-if [[ "$VERIFY" == true && "$DRY_RUN" == false && "$COMMAND" == "deploy" ]]; then
-    case $NETWORK in
-    mainnet | sepolia)
-        if [[ -n "$ETHERSCAN_API_KEY" ]]; then
-            FORGE_CMD="$FORGE_CMD --verify --etherscan-api-key $ETHERSCAN_API_KEY"
-        else
-            print_warning "ETHERSCAN_API_KEY not set, skipping verification"
-        fi
-        ;;
-    base)
-        if [[ -n "$BASESCAN_API_KEY" ]]; then
-            FORGE_CMD="$FORGE_CMD --verify --etherscan-api-key $BASESCAN_API_KEY"
-        else
-            print_warning "BASESCAN_API_KEY not set, skipping verification"
-        fi
-        ;;
-    base-sepolia)
-        if [[ -n "$BASESCAN_API_KEY" ]]; then
-            FORGE_CMD="$FORGE_CMD --verify --etherscan-api-key $BASESCAN_API_KEY"
-        else
-            print_warning "BASESCAN_API_KEY not set, skipping verification"
-        fi
-        ;;
-    arbitrum)
-        if [[ -n "$ARBISCAN_API_KEY" ]]; then
-            FORGE_CMD="$FORGE_CMD --verify --etherscan-api-key $ARBISCAN_API_KEY"
-        else
-            print_warning "ARBISCAN_API_KEY not set, skipping verification"
-        fi
-        ;;
-    optimism)
-        if [[ -n "$OPTIMISM_API_KEY" ]]; then
-            FORGE_CMD="$FORGE_CMD --verify --etherscan-api-key $OPTIMISM_API_KEY"
-        else
-            print_warning "OPTIMISM_API_KEY not set, skipping verification"
-        fi
-        ;;
-    polygon)
-        if [[ -n "$POLYGONSCAN_API_KEY" ]]; then
-            FORGE_CMD="$FORGE_CMD --verify --etherscan-api-key $POLYGONSCAN_API_KEY"
-        else
-            print_warning "POLYGONSCAN_API_KEY not set, skipping verification"
-        fi
-        ;;
-    esac
-fi
+FORGE_CMD=$(add_verification_flags "$FORGE_CMD")
 
 # Add verbosity
 FORGE_CMD="$FORGE_CMD -vvv"
