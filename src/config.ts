@@ -22,7 +22,6 @@ export const ENVSchema = z.object({
 		.min(1, { message: "DATADOG_API_KEY is required" }),
 	DATADOG_METRICS_ENABLED: z
 		.string()
-		.optional()
 		.default("true")
 		.transform((val) => val === "true"),
 });
