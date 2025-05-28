@@ -24,10 +24,6 @@ export const ENVSchema = z.object({
 		.string()
 		.default("true")
 		.transform((val) => val === "true"),
-	DEVELOPMENT_MODE: z
-		.string()
-		.default("false")
-		.transform((val) => val === "true"),
 });
 
 export type EnvConfig = z.infer<typeof ENVSchema>;
