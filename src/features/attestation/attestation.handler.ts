@@ -1,29 +1,22 @@
+import { env } from "config";
 import type { AppContext } from "../../types";
-import { TappdClient } from "@phala/dstack-sdk"; // Ensure this is installed
+import { TappdClient } from "@phala/dstack-sdk";
 
-export const getTEEPublicKeyHandler = async (c: AppContext) => {
+export const attestationHandler = async (c: AppContext) => {
 	const services = c.get("services");
 	const pubKeyBuffer = await services.encryptionService.getPublicKey();
-	const pubKeyBase64 = Buffer.from(pubKeyBuffer).toString("base64");
+
 	return c.json({
-		publicKey: pubKeyBase64,
+		quote: await getQuote(pubKeyBuffer),
+		publicKey: Buffer.from(pubKeyBuffer).toString("base64"),
 	});
 };
 
-export const getTDXQuoteHandler = async (c: AppContext) => {
-	const services = c.get("services");
-	const pubKeyBuffer = await services.encryptionService.getPublicKey();
-	const pubKeyBase64 = Buffer.from(pubKeyBuffer).toString("base64");
-
-	const client = new TappdClient();
-	try {
-		const result = await client.tdxQuote("test");
-		return c.json({
-			...result,
-			publicKey: pubKeyBase64,
-		});
-	} catch (error) {
-		console.error("Failed to get TDX quote:", error);
-		return c.json({ error: "Failed to retrieve TDX quote" }, 500);
+async function getQuote(publicKey: ArrayBuffer): Promise<string> {
+	if (env.DEVELOPMENT_MODE) {
+		return Buffer.from("mock-quote").toHex();
 	}
-};
+
+	const result = await new TappdClient().tdxQuote(new Uint8Array(publicKey));
+	return result.quote;
+}
