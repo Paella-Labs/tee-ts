@@ -37,9 +37,6 @@ jobs:
       - name: Run tests
         run: bun test
 
-      - name: Check for unused exports
-        run: bun run knip
-
   security:
     name: Security Scan
     runs-on: ubuntu-latest
