@@ -1,48 +1,48 @@
 {
-  "name": "@crossmint/kms-foundry",
-  "description": "Foundry-based CrossmintAppAuth smart contract deployment",
-  "version": "1.0.0",
-  "author": {
-    "name": "Crossmint",
-    "url": "https://github.com/crossmint"
-  },
-  "dependencies": {
-    "@openzeppelin/contracts": "5.3.0",
-    "@openzeppelin/contracts-upgradeable": "5.3.0"
-  },
-  "devDependencies": {
-    "forge-std": "github:foundry-rs/forge-std#v1.9.7",
-    "prettier": "^3.5",
-    "solhint": "^5.1"
-  },
-  "keywords": [
-    "blockchain",
-    "ethereum",
-    "forge",
-    "foundry",
-    "smart-contracts",
-    "solidity",
-    "crossmint",
-    "tee"
-  ],
-  "private": true,
-  "scripts": {
-    "clean": "rm -rf cache out",
-    "build": "forge build",
-    "lint": "bun run lint:sol && bun run prettier:check",
-    "lint:sol": "forge fmt --check && bun solhint \"{script,src,tests}/**/*.sol\"",
-    "prettier:check": "prettier --check \"**/*.{json,md,yml}\"",
-    "prettier:write": "prettier --write \"**/*.{json,md,yml}\"",
-    "test": "forge test",
-    "test:coverage": "forge coverage",
-    "test:coverage:report": "forge coverage --report lcov && genhtml lcov.info --branch-coverage --output-dir coverage",
-    "cli": "./crossmint-cli.sh",
-    "deploy": "./crossmint-cli.sh deploy",
-    "deploy:localhost": "./crossmint-cli.sh deploy --network localhost --broadcast",
-    "deploy:base": "./crossmint-cli.sh deploy --network base --broadcast",
-    "deploy:base-sepolia": "./crossmint-cli.sh deploy --network base-sepolia --broadcast",
-    "add-hash": "./crossmint-cli.sh add-hash --broadcast",
-    "add-device": "./crossmint-cli.sh add-device --broadcast",
-    "upgrade": "./crossmint-cli.sh upgrade --broadcast"
-  }
+	"name": "@crossmint/kms-foundry",
+	"description": "Foundry-based CrossmintAppAuth smart contract deployment",
+	"version": "1.0.0",
+	"author": {
+		"name": "Crossmint",
+		"url": "https://github.com/crossmint"
+	},
+	"dependencies": {
+		"@openzeppelin/contracts": "5.3.0",
+		"@openzeppelin/contracts-upgradeable": "5.3.0"
+	},
+	"devDependencies": {
+		"forge-std": "github:foundry-rs/forge-std#v1.9.7",
+		"prettier": "^3.5",
+		"solhint": "^5.1"
+	},
+	"keywords": [
+		"blockchain",
+		"ethereum",
+		"forge",
+		"foundry",
+		"smart-contracts",
+		"solidity",
+		"crossmint",
+		"tee"
+	],
+	"private": true,
+	"scripts": {
+		"clean": "rm -rf cache out",
+		"build": "forge build",
+		"lint": "bun run lint:sol && bun run prettier:check",
+		"lint:sol": "forge fmt --check && bun solhint \"{script,src,tests}/**/*.sol\"",
+		"prettier:check": "prettier --check \"**/*.{json,md,yml}\"",
+		"prettier:write": "prettier --write \"**/*.{json,md,yml}\"",
+		"test": "forge test",
+		"test:coverage": "forge coverage",
+		"test:coverage:report": "forge coverage --report lcov && genhtml lcov.info --branch-coverage --output-dir coverage",
+		"cli": "./crossmint-cli.sh",
+		"deploy": "./crossmint-cli.sh deploy",
+		"deploy:localhost": "./crossmint-cli.sh deploy --network localhost --broadcast",
+		"deploy:base": "./crossmint-cli.sh deploy --network base --broadcast",
+		"deploy:base-sepolia": "./crossmint-cli.sh deploy --network base-sepolia --broadcast",
+		"add-hash": "./crossmint-cli.sh add-hash --broadcast",
+		"add-device": "./crossmint-cli.sh add-device --broadcast",
+		"upgrade": "./crossmint-cli.sh upgrade --broadcast"
+	}
 }
