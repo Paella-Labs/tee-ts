@@ -32,8 +32,7 @@ jobs:
 
       - name: Run linting and formatting
         run: |
-          bunx biome format --check .
-          bunx biome check .
+          bunx biome ci .
 
       - name: Run tests
         run: bun test
