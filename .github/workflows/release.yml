@@ -6,9 +6,8 @@ on:
       - "v*"
 
 env:
-  REGISTRY: ghcr.io
-  TEE_IMAGE_NAME: ${{ github.repository }}-tee
-  NGINX_IMAGE_NAME: ${{ github.repository }}-nginx
+  TEE_IMAGE_NAME: xmregistry/crossmint-ts-tee
+  NGINX_IMAGE_NAME: xmregistry/crossmint-ts-tee-nginx
 
 jobs:
   release:
@@ -52,12 +51,11 @@ jobs:
             git log --pretty=format:"- %s" $(git describe --tags --abbrev=0 HEAD^)..HEAD >> release_notes.md
           fi
 
-      - name: Log in to Container Registry
+      - name: Log in to Docker Hub
         uses: docker/login-action@v3
         with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
 
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
@@ -66,7 +64,7 @@ jobs:
         id: meta-tee
         uses: docker/metadata-action@v5
         with:
-          images: ${{ env.REGISTRY }}/${{ env.TEE_IMAGE_NAME }}
+          images: ${{ env.TEE_IMAGE_NAME }}
           tags: |
             type=ref,event=tag
             type=semver,pattern={{version}}
@@ -77,7 +75,7 @@ jobs:
         id: meta-nginx
         uses: docker/metadata-action@v5
         with:
-          images: ${{ env.REGISTRY }}/${{ env.NGINX_IMAGE_NAME }}
+          images: ${{ env.NGINX_IMAGE_NAME }}
           tags: |
             type=ref,event=tag
             type=semver,pattern={{version}}
@@ -117,25 +115,3 @@ jobs:
           generate_release_notes: true
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Update Docker Hub description for TEE image
-        uses: peter-evans/dockerhub-description@v4
-        if: github.repository_owner == github.actor
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-          repository: ${{ github.repository_owner }}/tee-ts-tee
-          short-description: "TEE Service (Mock) - Mock TEE service for prototyping auth signers"
-          readme-filepath: ./README.md
-        continue-on-error: true
-
-      - name: Update Docker Hub description for Nginx image
-        uses: peter-evans/dockerhub-description@v4
-        if: github.repository_owner == github.actor
-        with:
-          username: ${{ secrets.DOCKERHUB_USERNAME }}
-          password: ${{ secrets.DOCKERHUB_TOKEN }}
-          repository: ${{ github.repository_owner }}/tee-ts-nginx
-          short-description: "TEE Service (Mock) - Nginx proxy for TEE service"
-          readme-filepath: ./README.md
-        continue-on-error: true
