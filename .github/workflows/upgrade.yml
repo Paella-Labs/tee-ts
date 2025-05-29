@@ -92,11 +92,11 @@ jobs:
             echo "No App ID provided, auto-detecting Staging CVM..."
             
             # List CVMs and find the one with "Staging" in the name
-            APP_ID=$(phala cvms list | grep '^│ Name.*Staging' -A 2 | grep '^│ App ID' | sed -E 's/.*app_([a-f0-9]+).*/\1/' || echo "")
+            APP_ID_HASH=$(phala cvms list | grep '^│ Name.*Staging' -A 2 | grep '^│ App ID' | sed -E 's/.*app_([a-f0-9]+).*/\1/' || echo "")
             
-            if [[ -n "$APP_ID" ]]; then
-              echo "Found Staging CVM with App ID: app_$APP_ID"
-              APP_ID="app_$APP_ID"
+            if [[ -n "$APP_ID_HASH" ]]; then
+              echo "Found Staging CVM with App ID hash: $APP_ID_HASH"
+              APP_ID="$APP_ID_HASH"
             else
               echo "❌ No CVM with 'Staging' in the name found!"
               echo "Available CVMs:"
