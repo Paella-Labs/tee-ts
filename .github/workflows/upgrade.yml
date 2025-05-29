@@ -1,0 +1,187 @@
+name: "Upgrade Phala Cloud CVM"
+
+on:
+  workflow_dispatch:
+    inputs:
+      app-id:
+        description: "App ID of the CVM to upgrade"
+        required: true
+        type: string
+      release-tag:
+        description: "Release tag to deploy (e.g., v1.0.0, latest)"
+        required: false
+        default: "latest"
+        type: string
+      compose-file:
+        description: "Path to the docker-compose.yml file"
+        required: false
+        default: "./docker-compose.yml"
+        type: string
+      skip-env:
+        description: "Skip environment variables during upgrade"
+        required: false
+        default: false
+        type: boolean
+
+jobs:
+  upgrade-cvm:
+    runs-on: ubuntu-latest
+    name: "Upgrade CVM"
+
+    outputs:
+      cvm-id: ${{ steps.upgrade.outputs.cvm-id }}
+      app-id: ${{ steps.upgrade.outputs.app-id }}
+      cvm-name: ${{ steps.upgrade.outputs.cvm-name }}
+      deployment-status: ${{ steps.upgrade.outputs.deployment-status }}
+      deployment-url: ${{ steps.upgrade.outputs.deployment-url }}
+      operation: ${{ steps.upgrade.outputs.operation }}
+      release-tag: ${{ steps.upgrade.outputs.release-tag }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Bun
+        uses: oven-sh/setup-bun@v1
+        with:
+          bun-version: latest
+
+      - name: Install yq and jq
+        shell: bash
+        run: |
+          sudo wget https://github.com/mikefarah/yq/releases/latest/download/yq_linux_amd64 -O /usr/local/bin/yq
+          sudo chmod +x /usr/local/bin/yq
+          sudo apt-get update && sudo apt-get install -y jq
+
+      - name: Prepare Environment Variables
+        shell: bash
+        run: |
+          set -e
+
+          if [[ "${{ inputs.skip-env }}" == "true" ]]; then
+            echo "Skipping environment variables as requested"
+            echo "ENV_FLAG=--skip-env" >> $GITHUB_ENV
+          elif [[ -n "${{ secrets.STAGING_ENV_FILE }}" ]]; then
+            echo "Processing environment variables from STAGING_ENV_FILE secret"
+            
+            # Parse JSON and convert to dotenv format
+            echo '${{ secrets.STAGING_ENV_FILE }}' | jq -r 'to_entries[] | "\(.key)=\(.value)"' > .env
+            
+            echo "Environment file created:"
+            echo "--- .env content (values masked) ---"
+            sed 's/=.*/=***/' .env
+            echo "--- end of .env ---"
+            
+            echo "ENV_FLAG=-e .env" >> $GITHUB_ENV
+          else
+            echo "No environment variables provided and skip-env is false"
+            echo "ENV_FLAG=" >> $GITHUB_ENV
+          fi
+
+      - name: Prepare Docker Compose with Release Tag
+        shell: bash
+        run: |
+          set -e
+          cd $GITHUB_WORKSPACE
+
+          # Create a temporary compose file with the specified tag
+          TEMP_COMPOSE_FILE="/tmp/docker-compose-tagged.yml"
+          cp "${{ inputs.compose-file }}" "$TEMP_COMPOSE_FILE"
+
+          echo "Original compose file:"
+          cat "${{ inputs.compose-file }}"
+          echo ""
+
+          # Update image tags in the compose file
+          # This handles various image formats:
+          # - image: myapp -> image: myapp:${{ inputs.release-tag }}
+          # - image: myapp:latest -> image: myapp:${{ inputs.release-tag }}
+          # - image: registry/myapp -> image: registry/myapp:${{ inputs.release-tag }}
+          # - image: registry/myapp:latest -> image: registry/myapp:${{ inputs.release-tag }}
+
+          yq eval '
+            (.. | select(has("image")) | .image) |= (
+              if (. | contains(":")) then
+                (. | split(":")[0]) + ":${{ inputs.release-tag }}"
+              else
+                . + ":${{ inputs.release-tag }}"
+              end
+            )
+          ' -i "$TEMP_COMPOSE_FILE"
+
+          echo "Updated compose file with tag '${{ inputs.release-tag }}':"
+          cat "$TEMP_COMPOSE_FILE"
+          echo ""
+
+          # Set the path for the upgrade step
+          echo "TAGGED_COMPOSE_FILE=$TEMP_COMPOSE_FILE" >> $GITHUB_ENV
+
+      - name: Upgrade Phala Cloud CVM
+        id: upgrade
+        shell: bash
+        run: |
+          set -e
+          cd $GITHUB_WORKSPACE
+
+          # Install Phala CLI
+          bun install -g phala
+
+          # Authenticate with Phala Cloud
+          phala auth login "${{ secrets.PHALA_API_KEY }}"
+
+          echo "Upgrading CVM with App ID: ${{ inputs.app-id }}"
+          echo "Using release tag: ${{ inputs.release-tag }}"
+          echo "Using compose file: $TAGGED_COMPOSE_FILE"
+          echo "Environment flag: $ENV_FLAG"
+
+          # Upgrade the CVM using the tagged compose file
+          output=$(phala cvms upgrade ${{ inputs.app-id }} \
+            --compose "$TAGGED_COMPOSE_FILE" \
+            $ENV_FLAG)
+
+          # Save output to a temporary file for parsing
+          echo "$output" > /tmp/phala_output.txt
+          echo "Phala CLI Output:"
+          cat /tmp/phala_output.txt
+
+          # Set outputs
+          echo "cvm-id=${{ inputs.app-id }}" >> $GITHUB_OUTPUT
+          echo "app-id=${{ inputs.app-id }}" >> $GITHUB_OUTPUT
+          echo "release-tag=${{ inputs.release-tag }}" >> $GITHUB_OUTPUT
+
+          # Try to extract CVM name from output or use app-id as fallback
+          cvm_name=$(grep -oP "CVM Name\s*│\s*\K[^│]+" /tmp/phala_output.txt | tr -d ' ' || echo "${{ inputs.app-id }}")
+          echo "cvm-name=$cvm_name" >> $GITHUB_OUTPUT
+
+          # Extract App URL or construct it
+          app_url=$(grep -oP "App URL\s*│\s*\K[^│]+" /tmp/phala_output.txt | tr -d ' ' || echo "https://cloud.phala.network/dashboard/cvms/${{ inputs.app-id }}")
+          echo "deployment-url=$app_url" >> $GITHUB_OUTPUT
+
+          # Set deployment status based on success
+          echo "deployment-status=success" >> $GITHUB_OUTPUT
+          echo "operation=update" >> $GITHUB_OUTPUT
+
+          echo "✅ CVM upgrade completed successfully!"
+          echo "🔗 App URL: $app_url"
+          echo "🏷️ Deployed release tag: ${{ inputs.release-tag }}"
+
+      - name: Display Results
+        shell: bash
+        run: |
+          echo "## 🚀 CVM Upgrade Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Field | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "|-------|-------|" >> $GITHUB_STEP_SUMMARY
+          echo "| **CVM ID** | ${{ steps.upgrade.outputs.cvm-id }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| **App ID** | ${{ steps.upgrade.outputs.app-id }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| **CVM Name** | ${{ steps.upgrade.outputs.cvm-name }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Release Tag** | \`${{ steps.upgrade.outputs.release-tag }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Status** | ${{ steps.upgrade.outputs.deployment-status }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Operation** | ${{ steps.upgrade.outputs.operation }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| **Deployment URL** | [${{ steps.upgrade.outputs.deployment-url }}](${{ steps.upgrade.outputs.deployment-url }}) |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "### 📋 Upgrade Details" >> $GITHUB_STEP_SUMMARY
+          echo "- **Original Compose File**: \`${{ inputs.compose-file }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **Release Tag Applied**: \`${{ inputs.release-tag }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- **Skip Environment**: ${{ inputs.skip-env }}" >> $GITHUB_STEP_SUMMARY
+          echo "- **Environment Variables**: ${{ secrets.STAGING_ENV_FILE != '' && 'Loaded from STAGING_ENV_FILE secret' || 'None' }}" >> $GITHUB_STEP_SUMMARY
