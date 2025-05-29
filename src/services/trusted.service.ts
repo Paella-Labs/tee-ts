@@ -72,11 +72,17 @@ export class TrustedService {
 	public async completeSignerCreation(
 		deviceId: string,
 		otp: string,
-	): Promise<{ device: string; auth: string; deviceKeyShareHash: string }> {
+	): Promise<{
+		device: string;
+		auth: string;
+		deviceKeyShareHash: string;
+		signerId: string;
+	}> {
 		const request = this.otpService.verifyOTP(deviceId, otp);
-		return this.keyService.generateAndSplitKey(
+		const keyMaterial = await this.keyService.generateAndSplitKey(
 			request.signerId,
 			request.authId,
 		);
+		return { ...keyMaterial, signerId: request.signerId };
 	}
 }
