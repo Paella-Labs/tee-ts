@@ -1,6 +1,6 @@
 services:
   tee-ts:
-    image: ${DOCKER_IMAGE:-xmregistry/crossmint-ts-tee:latest}
+    image: ${DOCKER_IMAGE:-xmregistry/crossmint-ts-tee:v0.0.1@sha256:fd14d61da4c56c36304fef38cff7c40f26813ad8d1dbf2c7b1326fc7081cbb8d}
     container_name: tee-ts
     restart: unless-stopped
     healthcheck:
@@ -36,7 +36,7 @@ services:
       - tee-ts-network
 
   nginx:
-    image: ${NGINX_DOCKER_IMAGE:-xmregistry/crossmint-ts-tee-nginx:latest}
+    image: ${NGINX_DOCKER_IMAGE:-xmregistry/crossmint-ts-tee-nginx:v0.0.1@sha256:235e69653b4dba1a6a39a24b1b3e5afcec808dd799d5d6f86d439ff7cbfe4803}
     container_name: nginx-proxy
     restart: unless-stopped
     healthcheck:
