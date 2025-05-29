@@ -120,10 +120,15 @@ jobs:
           echo "Using compose file: ${{ inputs.compose-file }}"
           echo "Environment flag: $ENV_FLAG"
 
-          # Upgrade the CVM
-          output=$(phala cvms upgrade $DETECTED_APP_ID \
-            --compose "${{ inputs.compose-file }}" \
-            $ENV_FLAG)
+          # Build the upgrade command
+          UPGRADE_CMD="phala cvms upgrade $DETECTED_APP_ID --compose \"${{ inputs.compose-file }}\" $ENV_FLAG"
+
+          # Print the exact command that will be executed
+          echo "🚀 Executing command:"
+          echo "$UPGRADE_CMD"
+
+          # Upgrade the CVM using the stored command
+          output=$(eval "$UPGRADE_CMD")
 
           # Save output to a temporary file for parsing
           echo "$output" > /tmp/phala_output.txt
