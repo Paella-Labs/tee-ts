@@ -126,6 +126,10 @@ contract CrossmintAppAuth is Initializable, AccessControlUpgradeable, UUPSUpgrad
         return (true, "");
     }
 
+    function isComposeHashAllowed(bytes32 composeHash) external view returns (bool) {
+        return allowedComposeHashes[composeHash];
+    }
+
     // Function to permanently disable upgrades
     function disableUpgrades() external onlyRole(DEFAULT_ADMIN_ROLE) {
         _upgradesDisabled = true;
