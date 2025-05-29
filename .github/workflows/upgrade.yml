@@ -240,7 +240,7 @@ jobs:
           echo "Environment flag: $ENV_FLAG"
 
           # Build the upgrade command
-          UPGRADE_CMD="phala cvms upgrade $ENV_FLAG $DETECTED_APP_ID"
+          UPGRADE_CMD="phala cvms upgrade --compose docker-compose.yml $ENV_FLAG $DETECTED_APP_ID"
 
           # Print the exact command that will be executed
           echo "🚀 Executing command:"
