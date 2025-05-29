@@ -13,7 +13,6 @@ COMPOSE_FILE="docker-compose.yml"
 DOCKER_IMAGE="xmregistry/crossmint-ts-tee:latest"
 NGINX_DOCKER_IMAGE="xmregistry/crossmint-ts-tee-nginx:latest"
 SKIP_BUILD=false
-APP_ID="83cf10f9c5a3fa6c2948c0220080c0b3cebfdcbd"
 DOCKER_USERNAME="xmregistry"
 DOCKER_TOKEN=""
 RANDOM_HASH=""
