@@ -171,8 +171,6 @@ contract CrossmintAppAuthTest is Test {
         appAuth.addDevice(testDeviceId);
     }
 
-
-
     function test_RemoveDevice() public {
         // First add a device
         vm.prank(manager);
@@ -392,5 +390,75 @@ contract CrossmintAppAuthTest is Test {
 
         assertFalse(isAllowed);
         assertEq(reason, "Wrong app controller");
+    }
+
+    function test_IsComposeHashAllowed_Success() public {
+        // Add a compose hash
+        vm.prank(manager);
+        appAuth.addComposeHash(testComposeHash, "v1.0.0");
+
+        // Test that the function returns true for allowed hash
+        assertTrue(appAuth.isComposeHashAllowed(testComposeHash));
+    }
+
+    function test_IsComposeHashAllowed_NotAllowed() public {
+        bytes32 unknownHash = keccak256("unknown-hash");
+
+        // Test that the function returns false for non-existent hash
+        assertFalse(appAuth.isComposeHashAllowed(unknownHash));
+    }
+
+    function test_IsComposeHashAllowed_AfterRemoval() public {
+        // Add a compose hash
+        vm.prank(manager);
+        appAuth.addComposeHash(testComposeHash, "v1.0.0");
+
+        // Verify it's allowed
+        assertTrue(appAuth.isComposeHashAllowed(testComposeHash));
+
+        // Remove the compose hash
+        vm.prank(manager);
+        appAuth.removeComposeHash(testComposeHash);
+
+        // Verify it's no longer allowed
+        assertFalse(appAuth.isComposeHashAllowed(testComposeHash));
+    }
+
+    function test_IsComposeHashAllowed_MultipleHashes() public {
+        bytes32 hash1 = keccak256("hash1");
+        bytes32 hash2 = keccak256("hash2");
+        bytes32 hash3 = keccak256("hash3");
+
+        // Add two hashes
+        vm.prank(manager);
+        appAuth.addComposeHash(hash1, "v1.0.0");
+        vm.prank(manager);
+        appAuth.addComposeHash(hash2, "v2.0.0");
+
+        // Test that allowed hashes return true
+        assertTrue(appAuth.isComposeHashAllowed(hash1));
+        assertTrue(appAuth.isComposeHashAllowed(hash2));
+
+        // Test that non-added hash returns false
+        assertFalse(appAuth.isComposeHashAllowed(hash3));
+    }
+
+    function test_Fuzz_IsComposeHashAllowed(bytes32 composeHash) public {
+        // Initially should be false for any hash
+        assertFalse(appAuth.isComposeHashAllowed(composeHash));
+
+        // Add the hash
+        vm.prank(manager);
+        appAuth.addComposeHash(composeHash, "fuzz-test");
+
+        // Should now return true
+        assertTrue(appAuth.isComposeHashAllowed(composeHash));
+
+        // Remove the hash
+        vm.prank(manager);
+        appAuth.removeComposeHash(composeHash);
+
+        // Should return false again
+        assertFalse(appAuth.isComposeHashAllowed(composeHash));
     }
 }
