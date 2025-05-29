@@ -60,21 +60,45 @@ jobs:
           if [[ "${{ inputs.skip-env }}" == "true" ]]; then
             echo "Skipping environment variables as requested"
             echo "ENV_FLAG=--skip-env" >> $GITHUB_ENV
-          elif [[ -n "${{ secrets.STAGING_ENV_FILE }}" ]]; then
-            echo "Processing environment variables from STAGING_ENV_FILE secret"
-            
-            # Parse JSON and convert to dotenv format
-            echo '${{ secrets.STAGING_ENV_FILE }}' | jq -r 'to_entries[] | "\(.key)=\(.value)"' > .env
-            
-            echo "Environment file created:"
-            echo "--- .env content (values masked) ---"
-            sed 's/=.*/=***/' .env
-            echo "--- end of .env ---"
-            
-            echo "ENV_FLAG=-e .env" >> $GITHUB_ENV
           else
-            echo "No environment variables provided and skip-env is false"
-            echo "ENV_FLAG=" >> $GITHUB_ENV
+            # Determine which env file secret to use based on environment
+            ENV_SECRET=""
+            case "${{ inputs.environment }}" in
+              "development")
+                ENV_SECRET="${{ secrets.DEV_ENV_FILE }}"
+                ENV_SECRET_NAME="DEV_ENV_FILE"
+                ;;
+              "staging")
+                ENV_SECRET="${{ secrets.STAGING_ENV_FILE }}"
+                ENV_SECRET_NAME="STAGING_ENV_FILE"
+                ;;
+              "production")
+                ENV_SECRET="${{ secrets.PRODUCTION_ENV_FILE }}"
+                ENV_SECRET_NAME="PRODUCTION_ENV_FILE"
+                ;;
+              *)
+                echo "❌ Unknown environment: ${{ inputs.environment }}"
+                exit 1
+                ;;
+            esac
+            
+            if [[ -n "$ENV_SECRET" ]]; then
+              echo "Processing environment variables from $ENV_SECRET_NAME secret"
+              
+              # Parse JSON and convert to dotenv format
+              echo "$ENV_SECRET" | jq -r 'to_entries[] | "\(.key)=\(.value)"' > .env
+              
+              echo "Environment file created:"
+              echo "--- .env content (values masked) ---"
+              sed 's/=.*/=***/' .env
+              echo "--- end of .env ---"
+              
+              echo "ENV_FLAG=-e .env" >> $GITHUB_ENV
+            else
+              echo "⚠️  Warning: $ENV_SECRET_NAME secret not found for ${{ inputs.environment }} environment"
+              echo "No environment variables will be applied"
+              echo "ENV_FLAG=" >> $GITHUB_ENV
+            fi
           fi
 
       - name: Detect App ID
@@ -327,7 +351,31 @@ jobs:
           echo "- **Environment**: \`${{ inputs.environment }}\`" >> $GITHUB_STEP_SUMMARY
           echo "- **App ID Source**: ${{ inputs.app-id != '' && 'Provided manually' || 'Auto-detected from environment' }}" >> $GITHUB_STEP_SUMMARY
           echo "- **Skip Environment**: ${{ inputs.skip-env }}" >> $GITHUB_STEP_SUMMARY
-          echo "- **Environment Variables**: ${{ secrets.STAGING_ENV_FILE != '' && 'Loaded from STAGING_ENV_FILE secret' || 'None' }}" >> $GITHUB_STEP_SUMMARY
+
+          # Determine env secret name for display
+          ENV_SECRET_NAME=""
+          case "${{ inputs.environment }}" in
+            "development")
+              ENV_SECRET_NAME="DEV_ENV_FILE"
+              HAS_SECRET="${{ secrets.DEV_ENV_FILE != '' }}"
+              ;;
+            "staging")
+              ENV_SECRET_NAME="STAGING_ENV_FILE"
+              HAS_SECRET="${{ secrets.STAGING_ENV_FILE != '' }}"
+              ;;
+            "production")
+              ENV_SECRET_NAME="PRODUCTION_ENV_FILE"
+              HAS_SECRET="${{ secrets.PRODUCTION_ENV_FILE != '' }}"
+              ;;
+          esac
+
+          if [[ "${{ inputs.skip-env }}" == "true" ]]; then
+            echo "- **Environment Variables**: Skipped" >> $GITHUB_STEP_SUMMARY
+          elif [[ "$HAS_SECRET" == "true" ]]; then
+            echo "- **Environment Variables**: Loaded from $ENV_SECRET_NAME secret" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "- **Environment Variables**: None ($ENV_SECRET_NAME secret not found)" >> $GITHUB_STEP_SUMMARY
+          fi
 
           # Add health check details if applicable
           if [[ "${{ inputs.environment }}" == "staging" || "${{ inputs.environment }}" == "production" ]]; then
