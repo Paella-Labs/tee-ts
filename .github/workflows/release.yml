@@ -193,43 +193,6 @@ jobs:
           echo "- TEE: ${TEE_DIGEST}"
           echo "- Nginx: ${NGINX_DIGEST}"
 
-      - name: Commit release artifacts
-        run: |
-          git config --local user.email "action@github.com"
-          git config --local user.name "GitHub Action"
-
-          # Create a new branch for the release artifacts
-          BRANCH_NAME="release-artifacts-v${{ steps.version.outputs.VERSION }}"
-          git checkout -b "${BRANCH_NAME}"
-
-          git add releases/
-          git commit -m "Add release artifacts for v${{ steps.version.outputs.VERSION }}" || exit 0
-          git push origin "${BRANCH_NAME}"
-
-      - name: Create Pull Request for release artifacts
-        uses: peter-evans/create-pull-request@v5
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          branch: release-artifacts-v${{ steps.version.outputs.VERSION }}
-          title: "Add release artifacts for v${{ steps.version.outputs.VERSION }}"
-          body: |
-            This PR adds the release artifacts for version v${{ steps.version.outputs.VERSION }}.
-
-            **Generated artifacts:**
-            - `releases/v${{ steps.version.outputs.VERSION }}-release-info.json` - Complete release information
-            - `releases/v${{ steps.version.outputs.VERSION }}-app-compose.json` - dstack app compose configuration
-            - `releases/v${{ steps.version.outputs.VERSION }}-docker-compose.yml` - Docker compose with pinned image versions
-
-            **Docker Images:**
-            - TEE: `${{ env.TEE_IMAGE_NAME }}:${{ steps.version.outputs.VERSION }}`
-            - Nginx: `${{ env.NGINX_IMAGE_NAME }}:${{ steps.version.outputs.VERSION }}`
-
-            This PR was automatically created by the release workflow.
-          labels: |
-            release
-            automated
-          draft: false
-
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
         with:
