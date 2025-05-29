@@ -61,20 +61,46 @@ jobs:
             echo "Skipping environment variables as requested"
             echo "ENV_FLAG=--skip-env" >> $GITHUB_ENV
           else
-            # Determine which env file secret to use based on environment
-            ENV_SECRET=""
+            # Create .env file based on environment
             case "${{ inputs.environment }}" in
               "development")
-                ENV_SECRET="${{ secrets.DEV_ENV_FILE }}"
-                ENV_SECRET_NAME="DEV_ENV_FILE"
+                if [[ -n "${{ secrets.DEV_ENV_FILE }}" ]]; then
+                  echo "Processing environment variables from DEV_ENV_FILE secret"
+                  if ! echo '${{ secrets.DEV_ENV_FILE }}' | jq -r 'to_entries[] | "\(.key)=\(.value)"' > .env; then
+                    echo "❌ Error: Failed to parse JSON from DEV_ENV_FILE secret"
+                    exit 1
+                  fi
+                  echo "ENV_FLAG=-e .env" >> $GITHUB_ENV
+                else
+                  echo "⚠️  Warning: DEV_ENV_FILE secret not found for development environment"
+                  echo "ENV_FLAG=" >> $GITHUB_ENV
+                fi
                 ;;
               "staging")
-                ENV_SECRET="${{ secrets.STAGING_ENV_FILE }}"
-                ENV_SECRET_NAME="STAGING_ENV_FILE"
+                if [[ -n "${{ secrets.STAGING_ENV_FILE }}" ]]; then
+                  echo "Processing environment variables from STAGING_ENV_FILE secret"
+                  if ! echo '${{ secrets.STAGING_ENV_FILE }}' | jq -r 'to_entries[] | "\(.key)=\(.value)"' > .env; then
+                    echo "❌ Error: Failed to parse JSON from STAGING_ENV_FILE secret"
+                    exit 1
+                  fi
+                  echo "ENV_FLAG=-e .env" >> $GITHUB_ENV
+                else
+                  echo "⚠️  Warning: STAGING_ENV_FILE secret not found for staging environment"
+                  echo "ENV_FLAG=" >> $GITHUB_ENV
+                fi
                 ;;
               "production")
-                ENV_SECRET="${{ secrets.PRODUCTION_ENV_FILE }}"
-                ENV_SECRET_NAME="PRODUCTION_ENV_FILE"
+                if [[ -n "${{ secrets.PRODUCTION_ENV_FILE }}" ]]; then
+                  echo "Processing environment variables from PRODUCTION_ENV_FILE secret"
+                  if ! echo '${{ secrets.PRODUCTION_ENV_FILE }}' | jq -r 'to_entries[] | "\(.key)=\(.value)"' > .env; then
+                    echo "❌ Error: Failed to parse JSON from PRODUCTION_ENV_FILE secret"
+                    exit 1
+                  fi
+                  echo "ENV_FLAG=-e .env" >> $GITHUB_ENV
+                else
+                  echo "⚠️  Warning: PRODUCTION_ENV_FILE secret not found for production environment"
+                  echo "ENV_FLAG=" >> $GITHUB_ENV
+                fi
                 ;;
               *)
                 echo "❌ Unknown environment: ${{ inputs.environment }}"
@@ -82,46 +108,12 @@ jobs:
                 ;;
             esac
             
-            if [[ -n "$ENV_SECRET" ]]; then
-              echo "Processing environment variables from $ENV_SECRET_NAME secret"
-              
-              # Write the secret to a temporary file to handle multi-line content safely
-              echo "$ENV_SECRET" > /tmp/env_secret.json
-              
-              # Validate that the secret is valid JSON
-              if ! jq empty /tmp/env_secret.json 2>/dev/null; then
-                echo "❌ Error: $ENV_SECRET_NAME secret is not valid JSON format!"
-                echo ""
-                echo "💡 JSON validation failed. Please check the secret format."
-                echo "Common issues:"
-                echo "- Missing quotes around keys or values"
-                echo "- Trailing commas"
-                echo "- Unescaped special characters"
-                rm -f /tmp/env_secret.json
-                exit 1
-              fi
-              
-              # Parse JSON and convert to dotenv format
-              if ! jq -r 'to_entries[] | "\(.key)=\(.value)"' /tmp/env_secret.json > .env; then
-                echo "❌ Error: Failed to parse JSON from $ENV_SECRET_NAME secret"
-                echo "Please check that the secret contains valid JSON format"
-                rm -f /tmp/env_secret.json
-                exit 1
-              fi
-              
-              # Clean up temporary file
-              rm -f /tmp/env_secret.json
-              
+            # Show .env content if it was created
+            if [[ -f .env ]]; then
               echo "Environment file created:"
               echo "--- .env content (values masked) ---"
               sed 's/=.*/=***/' .env
               echo "--- end of .env ---"
-              
-              echo "ENV_FLAG=-e .env" >> $GITHUB_ENV
-            else
-              echo "⚠️  Warning: $ENV_SECRET_NAME secret not found for ${{ inputs.environment }} environment"
-              echo "No environment variables will be applied"
-              echo "ENV_FLAG=" >> $GITHUB_ENV
             fi
           fi
 
