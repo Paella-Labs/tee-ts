@@ -26,8 +26,8 @@ mkdir -p releases
 # Create docker-compose.yml with specific version tags
 # Replace the entire image line for both services
 sed -E "
-    s|image: \\\${DOCKER_IMAGE:-[^}]*}|image: ${TEE_TAG}|g;
-    s|image: \\\${NGINX_DOCKER_IMAGE:-[^}]*}|image: ${NGINX_TAG}|g
+    s|image: \\\$\{DOCKER_IMAGE:-[^}]*\}|image: ${TEE_TAG}|g;
+    s|image: \\\$\{NGINX_DOCKER_IMAGE:-[^}]*\}|image: ${NGINX_TAG}|g
 " docker-compose.yml >"releases/v${VERSION}-docker-compose.yml"
 
 # Generate app-compose.json
