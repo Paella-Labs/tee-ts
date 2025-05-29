@@ -121,7 +121,7 @@ jobs:
           echo "Environment flag: $ENV_FLAG"
 
           # Build the upgrade command
-          UPGRADE_CMD="phala cvms upgrade $DETECTED_APP_ID --compose \"${{ inputs.compose-file }}\" $ENV_FLAG"
+          UPGRADE_CMD="phala cvms upgrade --compose ${{ inputs.compose-file }} $ENV_FLAG $DETECTED_APP_ID "
 
           # Print the exact command that will be executed
           echo "🚀 Executing command:"
