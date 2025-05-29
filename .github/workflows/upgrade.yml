@@ -85,9 +85,32 @@ jobs:
             if [[ -n "$ENV_SECRET" ]]; then
               echo "Processing environment variables from $ENV_SECRET_NAME secret"
               
-              # Parse JSON and convert to dotenv format (using jq directly with variable)
-              # This approach handles multi-line JSON safely
-              jq -r -n --arg json "$ENV_SECRET" '$json | fromjson | to_entries[] | "\(.key)=\(.value)"' > .env
+              # Write the secret to a temporary file to handle multi-line content safely
+              echo "$ENV_SECRET" > /tmp/env_secret.json
+              
+              # Validate that the secret is valid JSON
+              if ! jq empty /tmp/env_secret.json 2>/dev/null; then
+                echo "❌ Error: $ENV_SECRET_NAME secret is not valid JSON format!"
+                echo ""
+                echo "💡 JSON validation failed. Please check the secret format."
+                echo "Common issues:"
+                echo "- Missing quotes around keys or values"
+                echo "- Trailing commas"
+                echo "- Unescaped special characters"
+                rm -f /tmp/env_secret.json
+                exit 1
+              fi
+              
+              # Parse JSON and convert to dotenv format
+              if ! jq -r 'to_entries[] | "\(.key)=\(.value)"' /tmp/env_secret.json > .env; then
+                echo "❌ Error: Failed to parse JSON from $ENV_SECRET_NAME secret"
+                echo "Please check that the secret contains valid JSON format"
+                rm -f /tmp/env_secret.json
+                exit 1
+              fi
+              
+              # Clean up temporary file
+              rm -f /tmp/env_secret.json
               
               echo "Environment file created:"
               echo "--- .env content (values masked) ---"
