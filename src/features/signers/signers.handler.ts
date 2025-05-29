@@ -90,7 +90,6 @@ export const completeOnboardingHandler = async (c: AppContext) => {
 	const encryptedResponse = await services.encryptionService.encryptBase64(
 		{
 			deviceKeyShare: device,
-			deviceId,
 			signerId,
 		},
 		senderPublicKey,
