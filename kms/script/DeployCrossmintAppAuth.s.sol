@@ -24,9 +24,12 @@ contract DeployCrossmintAppAuth is BaseScript {
         console2.log("  Allow Any Device:", allowAnyDevice);
 
         // Get the next app ID from KMS contract
-        KmsAuth kms = KmsAuth(kmsContract);
-        address appId = kms.nextAppId();
-        console2.log("  Next App ID:", appId);
+        // KmsAuth kms = KmsAuth(kmsContract);
+        // address appId = kms.nextAppId();
+        // console2.log("  Next App ID:", appId);
+
+        address appId = vm.envAddress("APP_ID"); // Delete when obtained on-chain
+        console2.log("  App ID:", appId);
 
         // Deploy implementation first
         implementation = address(new CrossmintAppAuth());
@@ -41,14 +44,14 @@ contract DeployCrossmintAppAuth is BaseScript {
         proxy = address(new ERC1967Proxy(implementation, initData));
         console2.log("Proxy deployed at:", proxy);
 
-        // Register the app in KMS contract with the proxy as controller
-        console2.log("Registering app in KMS contract...");
-        kms.registerApp(proxy);
-        
-        console2.log("Deployment completed successfully!");
-        console2.log("Proxy address:", proxy);
-        console2.log("Implementation address:", implementation);
-        console2.log("App ID:", appId);
-        console2.log("App registered in KMS contract:", kmsContract);
+       // Register the app in KMS contract with the proxy as controller
+       // console2.log("Registering app in KMS contract...");
+       // kms.registerApp(proxy);
+       // 
+       // console2.log("Deployment completed successfully!");
+       // console2.log("Proxy address:", proxy);
+       // console2.log("Implementation address:", implementation);
+       // console2.log("App ID:", appId);
+       // console2.log("App registered in KMS contract:", kmsContract);
     }
 }

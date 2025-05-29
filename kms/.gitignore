@@ -5,7 +5,8 @@ node_modules
 out
 
 # files
-*.env
+.env*
+.fireblocks.*
 *.log
 .DS_Store
 .pnp.*
@@ -13,6 +14,7 @@ lcov.info
 package-lock.json
 pnpm-lock.yaml
 yarn.lock
+deployments/*
 
 # broadcasts
 !broadcast

@@ -53,34 +53,6 @@ print_error() {
     echo -e "${RED}❌ $1${NC}"
 }
 
-# Network configuration function
-get_network_config() {
-    local network="$1"
-    case $network in
-    localhost)
-        echo "rpc_url=http://localhost:8545"
-        echo "explorer_name=localhost"
-        echo "explorer_api_key_env="
-        echo "supported=true"
-        ;;
-    base)
-        echo "rpc_url=${BASE_RPC_URL:-https://mainnet.base.org}"
-        echo "explorer_name=basescan"
-        echo "explorer_api_key_env=BASESCAN_API_KEY"
-        echo "supported=true"
-        ;;
-    base-sepolia)
-        echo "rpc_url=${BASE_SEPOLIA_RPC_URL:-https://sepolia.base.org}"
-        echo "explorer_name=basescan"
-        echo "explorer_api_key_env=BASESCAN_API_KEY"
-        echo "supported=true"
-        ;;
-    *)
-        echo "supported=false"
-        ;;
-    esac
-}
-
 # Function to print common configuration
 print_common_config() {
     echo "Network: $NETWORK"
@@ -142,7 +114,7 @@ build_forge_command() {
     esac
 
     # Add RPC URL
-    forge_cmd="$forge_cmd --rpc-url $RPC_URL"
+    forge_cmd="$forge_cmd "
 
     # Add broadcast flag if not dry run
     if [[ "$BROADCAST" == true && "$DRY_RUN" == false ]]; then
@@ -157,20 +129,10 @@ add_verification_flags() {
     local forge_cmd="$1"
 
     if [[ "$VERIFY" == true && "$DRY_RUN" == false && "$COMMAND" == "deploy" ]]; then
-        local config
-        config=$(get_network_config "$NETWORK")
-        local explorer_api_key_env
-        explorer_api_key_env=$(echo "$config" | grep "explorer_api_key_env=" | cut -d'=' -f2)
-
-        if [[ -n "$explorer_api_key_env" ]]; then
-            local api_key_value="${!explorer_api_key_env}"
-            if [[ -n "$api_key_value" ]]; then
-                forge_cmd="$forge_cmd --verify --etherscan-api-key $api_key_value"
-            else
-                local explorer_name
-                explorer_name=$(echo "$config" | grep "explorer_name=" | cut -d'=' -f2)
-                print_warning "${explorer_api_key_env} not set, skipping verification for ${explorer_name}"
-            fi
+        if [[ -n "$SCAN_API_KEY" ]]; then
+            forge_cmd="$forge_cmd --verify --etherscan-api-key $SCAN_API_KEY"
+        else
+            print_warning "SCAN_API_KEY not set, skipping contract verification"
         fi
     fi
 
@@ -189,7 +151,6 @@ show_usage() {
     echo "  add-device          Add a device to an existing contract"
     echo "  upgrade             Upgrade an existing contract"
     echo "  verify-registration Verify app registration in KMS contract"
-    echo "  get-config          Show configuration for a specific network"
     echo ""
     echo "Options:"
     echo "  -n, --network NETWORK    Network to use (default: localhost)"
@@ -207,6 +168,7 @@ show_usage() {
     echo ""
     echo "For deployment:"
     echo "  KMS_CONTRACT_ADDRESS    Address of the KMS contract to register with [REQUIRED]"
+    echo "  RPC_URL                 RPC endpoint URL for the network [REQUIRED]"
     echo "  INITIAL_ADMIN           Initial admin address (defaults to deployer)"
     echo "  DISABLE_UPGRADES        Set to 'true' to disable upgrades (default: false)"
     echo "  ALLOW_ANY_DEVICE        Set to 'false' to restrict devices (default: true)"
@@ -223,12 +185,18 @@ show_usage() {
     echo "  KMS_CONTRACT_ADDRESS    Address of the KMS contract (for verify-registration) [REQUIRED]"
     echo "  APP_ID                  App ID to verify (for verify-registration) [REQUIRED]"
     echo ""
+    echo "For contract verification:"
+    echo "  SCAN_API_KEY            Block explorer API key for contract verification (optional)"
+    echo ""
     echo "Authentication (choose one):"
     echo "  PRIVATE_KEY             Private key for deployment account"
     echo ""
     echo "For Fireblocks (when using --fireblocks):"
     echo "  VAULT_ACCOUNT_ID        Fireblocks vault account ID [REQUIRED]"
     echo "  VAULT_ADDRESS           Fireblocks vault address [REQUIRED]"
+    echo "  FIREBLOCKS_API_KEY      Fireblocks API key [REQUIRED]"
+    echo "  FIREBLOCKS_API_PRIVATE_KEY_PATH  Path to Fireblocks private key file [REQUIRED]"
+    echo "  CHAIN_ID                Chain ID for the network [REQUIRED]"
     echo ""
     echo "Examples:"
     echo "  # Deploy contract with private key"
@@ -256,8 +224,6 @@ show_usage() {
     echo "  KMS_CONTRACT_ADDRESS=0x1234... APP_ID=0x5678... \\"
     echo "  $0 verify-registration --network base-sepolia"
     echo ""
-    echo "  # Get network configuration"
-    echo "  $0 get-config --network base-sepolia"
 }
 
 # Parse command line arguments
@@ -317,12 +283,12 @@ done
 
 # Validate command
 case $COMMAND in
-deploy | add-hash | add-device | upgrade | verify-registration | get-config)
+deploy | add-hash | add-device | upgrade | verify-registration)
     # Valid commands
     ;;
 *)
     print_error "Unknown command: $COMMAND"
-    echo "Valid commands: deploy, add-hash, add-device, upgrade, verify-registration, get-config"
+    echo "Valid commands: deploy, add-hash, add-device, upgrade, verify-registration"
     show_usage
     exit 1
     ;;
@@ -452,6 +418,18 @@ if [[ "$BROADCAST" == true && "$DRY_RUN" == false ]]; then
             print_error "VAULT_ADDRESS must be a valid 40-character hex string starting with 0x"
             exit 1
         fi
+        if [[ -z "$FIREBLOCKS_API_KEY" ]]; then
+            print_error "FIREBLOCKS_API_KEY environment variable is required when using --fireblocks"
+            exit 1
+        fi
+        if [[ -z "$FIREBLOCKS_API_PRIVATE_KEY_PATH" ]]; then
+            print_error "FIREBLOCKS_API_PRIVATE_KEY_PATH environment variable is required when using --fireblocks"
+            exit 1
+        fi
+        if [[ -z "$CHAIN_ID" ]]; then
+            print_error "CHAIN_ID environment variable is required when using --fireblocks"
+            exit 1
+        fi
     else
         if [[ -z "$PRIVATE_KEY" ]]; then
             print_error "PRIVATE_KEY environment variable is required for broadcasting (or use --fireblocks)"
@@ -460,43 +438,11 @@ if [[ "$BROADCAST" == true && "$DRY_RUN" == false ]]; then
     fi
 fi
 
-# Get network configuration
-NETWORK_CONFIG=$(get_network_config "$NETWORK")
-NETWORK_SUPPORTED=$(echo "$NETWORK_CONFIG" | grep "supported=" | cut -d'=' -f2)
-
-if [[ "$NETWORK_SUPPORTED" != "true" ]]; then
-    print_error "Unsupported network: $NETWORK"
-    echo "Supported networks: localhost, base, base-sepolia"
+# Validate RPC_URL is provided
+if [[ -z "$RPC_URL" ]]; then
+    print_error "RPC_URL environment variable is required"
+    echo "Please set RPC_URL in your environment file or as an environment variable"
     exit 1
-fi
-
-# Extract RPC URL from network configuration
-RPC_URL=$(echo "$NETWORK_CONFIG" | grep "rpc_url=" | cut -d'=' -f2-)
-
-# Handle get-config command
-if [[ "$COMMAND" == "get-config" ]]; then
-    print_info "Network Configuration for $NETWORK"
-    echo "=================================="
-
-    CONFIG_RPC_URL=$(echo "$NETWORK_CONFIG" | grep "rpc_url=" | cut -d'=' -f2-)
-    CONFIG_EXPLORER_NAME=$(echo "$NETWORK_CONFIG" | grep "explorer_name=" | cut -d'=' -f2)
-    CONFIG_EXPLORER_API_KEY_ENV=$(echo "$NETWORK_CONFIG" | grep "explorer_api_key_env=" | cut -d'=' -f2)
-
-    echo "RPC URL: $CONFIG_RPC_URL"
-    echo "Explorer: $CONFIG_EXPLORER_NAME"
-    if [[ -n "$CONFIG_EXPLORER_API_KEY_ENV" ]]; then
-        echo "Explorer API Key Env: $CONFIG_EXPLORER_API_KEY_ENV"
-        CONFIG_API_KEY_VALUE="${!CONFIG_EXPLORER_API_KEY_ENV}"
-        if [[ -n "$CONFIG_API_KEY_VALUE" ]]; then
-            echo "Explorer API Key: [SET]"
-        else
-            echo "Explorer API Key: [NOT SET]"
-        fi
-    else
-        echo "Explorer API Key Env: [NOT REQUIRED]"
-    fi
-    echo ""
-    exit 0
 fi
 
 # Print configuration based on command
@@ -600,17 +546,19 @@ if [[ "$USE_FIREBLOCKS" == true ]]; then
     fi
 
     # Set ETH_FROM for Fireblocks vault address
-    export ETH_FROM="$VAULT_ADDRESS"
-    print_info "Setting ETH_FROM to Fireblocks vault address: $ETH_FROM"
+    # export ETH_FROM="$VAULT_ADDRESS"
+    # print_info "Setting ETH_FROM to Fireblocks vault address: $ETH_FROM"
 
     # Wrap the forge command with fireblocks-json-rpc
-    FIREBLOCKS_CMD="fireblocks-json-rpc -v --http --vaultAccountIds $VAULT_ACCOUNT_ID --"
+    FIREBLOCKS_CMD="fireblocks-json-rpc -v --http \
+        --chainId $CHAIN_ID --rpcUrl $RPC_URL \
+        --vaultAccountIds $VAULT_ACCOUNT_ID --"
     FORGE_CMD="$FIREBLOCKS_CMD $FORGE_CMD"
 
     # Add Fireblocks-specific flags
-    FORGE_CMD="$FORGE_CMD --sender $VAULT_ADDRESS --unlocked --legacy --slow"
+    FORGE_CMD="$FORGE_CMD --sender $VAULT_ADDRESS --unlocked --legacy --slow --rpc-url {}"
 elif [[ -n "$PRIVATE_KEY" ]]; then
-    FORGE_CMD="$FORGE_CMD --private-key $PRIVATE_KEY"
+    FORGE_CMD="$FORGE_CMD --private-key $PRIVATE_KEY --rpc-url $RPC_URL"
     # Derive the address from the private key and set ETH_FROM so BaseScript uses the correct broadcaster
     DERIVED_ADDRESS=$(cast wallet address --private-key "$PRIVATE_KEY")
     export ETH_FROM="$DERIVED_ADDRESS"
