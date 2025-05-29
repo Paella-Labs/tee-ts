@@ -17,6 +17,7 @@ DOCKER_USERNAME="xmregistry"
 DOCKER_TOKEN=""
 RANDOM_HASH=""
 DOCKER_CMD="docker"
+APP_ID="08fc4925ab9224383d6ee37e2b23b7367b26ffa8"
 
 print_usage() {
     echo "Usage: $0 [deploy|undeploy|build-and-push|upgrade] [options]"
