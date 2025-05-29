@@ -1,0 +1,70 @@
+services:
+  tee-ts:
+    image: xmregistry/crossmint-ts-tee:0.0.4
+    container_name: tee-ts
+    restart: unless-stopped
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "wget",
+          "--no-verbose",
+          "--tries=1",
+          "--spider",
+          "http://localhost/health",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    environment:
+      - GRANT_SUDO=yes
+      - PORT=3000
+      - SENDGRID_API_KEY=${SENDGRID_API_KEY}
+      - SENDGRID_EMAIL_TEMPLATE_ID=${SENDGRID_EMAIL_TEMPLATE_ID}
+      - MOCK_TEE_SECRET=${MOCK_TEE_SECRET}
+      - ACCESS_SECRET=${ACCESS_SECRET}
+      - DD_SERVICE=${DD_SERVICE}
+      - DD_ENV=${DD_ENV}
+      - DD_VERSION=${DD_VERSION}
+      - DATADOG_API_KEY=${DATADOG_API_KEY}
+      - DD_METRICS_ENABLED=${DD_METRICS_ENABLED:-true}
+    user: root
+    volumes:
+      - /var/run/tappd.sock:/var/run/tappd.sock
+    networks:
+      - tee-ts-network
+
+  nginx:
+    image: xmregistry/crossmint-ts-tee-nginx:0.0.4
+    container_name: nginx-proxy
+    restart: unless-stopped
+    healthcheck:
+      test:
+        [
+          "CMD",
+          "wget",
+          "--no-verbose",
+          "--tries=1",
+          "--spider",
+          "http://localhost/health",
+        ]
+      interval: 30s
+      timeout: 10s
+      retries: 3
+      start_period: 10s
+    ports:
+      - "443:443"
+    environment:
+      - SSL_CERTIFICATE=${SSL_CERTIFICATE}
+      - SSL_CERTIFICATE_KEY=${SSL_CERTIFICATE_KEY}
+    volumes:
+      - /var/run/tappd.sock:/var/run/tappd.sock
+    depends_on:
+      - tee-ts
+    networks:
+      - tee-ts-network
+
+networks:
+  tee-ts-network:
+    driver: bridge

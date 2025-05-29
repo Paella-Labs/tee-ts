@@ -1,0 +1,15 @@
+{
+    "manifest_version": 2,
+    "name": "dstack-attestation-example",
+    "runner": "docker-compose",
+    "docker_compose_file": "services:\n  tee-ts:\n    image: xmregistry/crossmint-ts-tee:0.0.4\n    container_name: tee-ts\n    restart: unless-stopped\n    healthcheck:\n      test:\n        [\n          \"CMD\",\n          \"wget\",\n          \"--no-verbose\",\n          \"--tries=1\",\n          \"--spider\",\n          \"http://localhost/health\",\n        ]\n      interval: 30s\n      timeout: 10s\n      retries: 3\n      start_period: 10s\n    environment:\n      - GRANT_SUDO=yes\n      - PORT=3000\n      - SENDGRID_API_KEY=${SENDGRID_API_KEY}\n      - SENDGRID_EMAIL_TEMPLATE_ID=${SENDGRID_EMAIL_TEMPLATE_ID}\n      - MOCK_TEE_SECRET=${MOCK_TEE_SECRET}\n      - ACCESS_SECRET=${ACCESS_SECRET}\n      - DD_SERVICE=${DD_SERVICE}\n      - DD_ENV=${DD_ENV}\n      - DD_VERSION=${DD_VERSION}\n      - DATADOG_API_KEY=${DATADOG_API_KEY}\n      - DD_METRICS_ENABLED=${DD_METRICS_ENABLED:-true}\n    user: root\n    volumes:\n      - /var/run/tappd.sock:/var/run/tappd.sock\n    networks:\n      - tee-ts-network\n\n  nginx:\n    image: xmregistry/crossmint-ts-tee-nginx:0.0.4\n    container_name: nginx-proxy\n    restart: unless-stopped\n    healthcheck:\n      test:\n        [\n          \"CMD\",\n          \"wget\",\n          \"--no-verbose\",\n          \"--tries=1\",\n          \"--spider\",\n          \"http://localhost/health\",\n        ]\n      interval: 30s\n      timeout: 10s\n      retries: 3\n      start_period: 10s\n    ports:\n      - \"443:443\"\n    environment:\n      - SSL_CERTIFICATE=${SSL_CERTIFICATE}\n      - SSL_CERTIFICATE_KEY=${SSL_CERTIFICATE_KEY}\n    volumes:\n      - /var/run/tappd.sock:/var/run/tappd.sock\n    depends_on:\n      - tee-ts\n    networks:\n      - tee-ts-network\n\nnetworks:\n  tee-ts-network:\n    driver: bridge\n",
+    "kms_enabled": true,
+    "gateway_enabled": true,
+    "local_key_provider_enabled": false,
+    "key_provider_id": "",
+    "public_logs": true,
+    "public_sysinfo": true,
+    "allowed_envs": [],
+    "no_instance_id": false,
+    "secure_time": false
+}

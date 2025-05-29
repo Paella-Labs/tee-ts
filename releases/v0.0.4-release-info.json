@@ -1,0 +1,71 @@
+{
+    "version": "v0.0.4",
+    "release_date": "2025-05-29T13:56:29Z",
+    "git_commit": "774c28ed85f8a14a883f26d0df6dbde78d355ad0",
+    "git_ref": "refs/tags/v0.0.4",
+    "docker_images": {
+        "tee": {
+            "name": "xmregistry/crossmint-ts-tee",
+            "primary_tag": "xmregistry/crossmint-ts-tee:0.0.4",
+            "all_tags": [
+  "xmregistry/crossmint-ts-tee:0.0.4"
+]
+[
+  "xmregistry/crossmint-ts-tee:0.0"
+]
+[
+  "xmregistry/crossmint-ts-tee:0"
+]
+[
+  "xmregistry/crossmint-ts-tee:v0.0.4"
+]
+[
+  "xmregistry/crossmint-ts-tee:latest"
+],
+            "digest": "sha256:8e0b15f7eb79a65ba2ed92ccbd71f67666cac987604e530edc227c45f6600b87",
+            "labels": org.opencontainers.image.created=2025-05-29T13:55:28.747Z
+org.opencontainers.image.description=
+org.opencontainers.image.licenses=
+org.opencontainers.image.revision=774c28ed85f8a14a883f26d0df6dbde78d355ad0
+org.opencontainers.image.source=https://github.com/Paella-Labs/tee-ts
+org.opencontainers.image.title=tee-ts
+org.opencontainers.image.url=https://github.com/Paella-Labs/tee-ts
+org.opencontainers.image.version=0.0.4
+        },
+        "nginx": {
+            "name": "xmregistry/crossmint-ts-tee-nginx",
+            "primary_tag": "xmregistry/crossmint-ts-tee-nginx:0.0.4",
+            "all_tags": [
+  "xmregistry/crossmint-ts-tee-nginx:0.0.4"
+]
+[
+  "xmregistry/crossmint-ts-tee-nginx:0.0"
+]
+[
+  "xmregistry/crossmint-ts-tee-nginx:0"
+]
+[
+  "xmregistry/crossmint-ts-tee-nginx:v0.0.4"
+]
+[
+  "xmregistry/crossmint-ts-tee-nginx:latest"
+],
+            "digest": "sha256:8ee130a15c03c1c3a8bcf28e9fb53a5716ea50ec4a448e69a53c3a0a1991ac1d",
+            "labels": org.opencontainers.image.created=2025-05-29T13:55:29.340Z
+org.opencontainers.image.description=
+org.opencontainers.image.licenses=
+org.opencontainers.image.revision=774c28ed85f8a14a883f26d0df6dbde78d355ad0
+org.opencontainers.image.source=https://github.com/Paella-Labs/tee-ts
+org.opencontainers.image.title=tee-ts
+org.opencontainers.image.url=https://github.com/Paella-Labs/tee-ts
+org.opencontainers.image.version=0.0.4
+        }
+    },
+    "app_compose": {
+        "file": "v0.0.4-app-compose.json",
+        "hash": "d1d857304112e988abdf21eea0f71679631bc109f0b318a6b6f5c2a5eb3b9238"
+    },
+    "docker_compose": {
+        "file": "v0.0.4-docker-compose.yml"
+    }
+}
