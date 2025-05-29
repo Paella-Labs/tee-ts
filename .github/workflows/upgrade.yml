@@ -85,8 +85,9 @@ jobs:
             if [[ -n "$ENV_SECRET" ]]; then
               echo "Processing environment variables from $ENV_SECRET_NAME secret"
               
-              # Parse JSON and convert to dotenv format
-              echo "$ENV_SECRET" | jq -r 'to_entries[] | "\(.key)=\(.value)"' > .env
+              # Parse JSON and convert to dotenv format (using jq directly with variable)
+              # This approach handles multi-line JSON safely
+              jq -r -n --arg json "$ENV_SECRET" '$json | fromjson | to_entries[] | "\(.key)=\(.value)"' > .env
               
               echo "Environment file created:"
               echo "--- .env content (values masked) ---"
