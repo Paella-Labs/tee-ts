@@ -83,6 +83,7 @@ jobs:
             type=semver,pattern={{major}}
 
       - name: Build and push TEE Docker image
+        id: build-tee
         uses: docker/build-push-action@v5
         with:
           context: .
@@ -95,6 +96,7 @@ jobs:
           cache-to: type=gha,mode=max,scope=tee
 
       - name: Build and push Nginx Docker image
+        id: build-nginx
         uses: docker/build-push-action@v5
         with:
           context: .
@@ -106,6 +108,99 @@ jobs:
           cache-from: type=gha,scope=nginx
           cache-to: type=gha,mode=max,scope=nginx
 
+      - name: Generate release artifacts
+        run: |
+          # Create releases directory if it doesn't exist
+          mkdir -p releases
+
+          # Extract image digests
+          TEE_DIGEST="${{ steps.build-tee.outputs.digest }}"
+          NGINX_DIGEST="${{ steps.build-nginx.outputs.digest }}"
+
+          # Get the primary version tag (without v prefix)
+          VERSION="${{ steps.version.outputs.VERSION }}"
+          PRIMARY_TEE_TAG="${{ env.TEE_IMAGE_NAME }}:${VERSION}"
+          PRIMARY_NGINX_TAG="${{ env.NGINX_IMAGE_NAME }}:${VERSION}"
+
+          # Create docker-compose.yml with specific version tags
+          # Replace the entire image line for both services
+          sed -E "
+              s|image: \\\${DOCKER_IMAGE:-[^}]*}|image: ${PRIMARY_TEE_TAG}|g;
+              s|image: \\\${NGINX_DOCKER_IMAGE:-[^}]*}|image: ${PRIMARY_NGINX_TAG}|g
+          " docker-compose.yml > "releases/v${VERSION}-docker-compose.yml"
+
+          # Generate app-compose.json
+          cat > "releases/v${VERSION}-app-compose.json" << EOF
+          {
+              "manifest_version": 2,
+              "name": "dstack-attestation-example",
+              "runner": "docker-compose",
+              "docker_compose_file": $(jq -Rs . < "releases/v${VERSION}-docker-compose.yml"),
+              "kms_enabled": true,
+              "gateway_enabled": true,
+              "local_key_provider_enabled": false,
+              "key_provider_id": "",
+              "public_logs": true,
+              "public_sysinfo": true,
+              "allowed_envs": [],
+              "no_instance_id": false,
+              "secure_time": false
+          }
+          EOF
+
+          # Calculate app-compose hash
+          COMPOSE_HASH=$(sha256sum "releases/v${VERSION}-app-compose.json" | cut -d' ' -f1)
+
+          # Generate comprehensive release information
+          cat > "releases/v${VERSION}-release-info.json" << EOF
+          {
+              "version": "v${VERSION}",
+              "release_date": "$(date -u +%Y-%m-%dT%H:%M:%SZ)",
+              "git_commit": "${GITHUB_SHA}",
+              "git_ref": "${GITHUB_REF}",
+              "docker_images": {
+                  "tee": {
+                      "name": "${{ env.TEE_IMAGE_NAME }}",
+                      "primary_tag": "${PRIMARY_TEE_TAG}",
+                      "all_tags": $(echo '${{ steps.meta-tee.outputs.tags }}' | jq -R 'split("\n")'),
+                      "digest": "${TEE_DIGEST}",
+                      "labels": ${{ steps.meta-tee.outputs.labels }}
+                  },
+                  "nginx": {
+                      "name": "${{ env.NGINX_IMAGE_NAME }}",
+                      "primary_tag": "${PRIMARY_NGINX_TAG}",
+                      "all_tags": $(echo '${{ steps.meta-nginx.outputs.tags }}' | jq -R 'split("\n")'),
+                      "digest": "${NGINX_DIGEST}",
+                      "labels": ${{ steps.meta-nginx.outputs.labels }}
+                  }
+              },
+              "app_compose": {
+                  "file": "v${VERSION}-app-compose.json",
+                  "hash": "${COMPOSE_HASH}"
+              },
+              "docker_compose": {
+                  "file": "v${VERSION}-docker-compose.yml"
+              }
+          }
+          EOF
+
+          echo "Release artifacts generated:"
+          echo "- releases/v${VERSION}-release-info.json"
+          echo "- releases/v${VERSION}-app-compose.json (hash: ${COMPOSE_HASH})"
+          echo "- releases/v${VERSION}-docker-compose.yml"
+          echo ""
+          echo "Docker image digests:"
+          echo "- TEE: ${TEE_DIGEST}"
+          echo "- Nginx: ${NGINX_DIGEST}"
+
+      - name: Commit release artifacts
+        run: |
+          git config --local user.email "action@github.com"
+          git config --local user.name "GitHub Action"
+          git add releases/
+          git commit -m "Add release artifacts for v${{ steps.version.outputs.VERSION }}" || exit 0
+          git push origin HEAD:main
+
       - name: Create GitHub Release
         uses: softprops/action-gh-release@v1
         with:
@@ -113,5 +208,9 @@ jobs:
           draft: false
           prerelease: ${{ contains(github.ref, 'alpha') || contains(github.ref, 'beta') || contains(github.ref, 'rc') }}
           generate_release_notes: true
+          files: |
+            releases/v${{ steps.version.outputs.VERSION }}-release-info.json
+            releases/v${{ steps.version.outputs.VERSION }}-app-compose.json
+            releases/v${{ steps.version.outputs.VERSION }}-docker-compose.yml
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}

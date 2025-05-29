@@ -9,7 +9,7 @@ DISK_SIZE=2
 NAME="tee-ts"
 ENV_FILE=".env"
 COMPOSE_FILE="docker-compose.yml"
-IMAGE="dstack-dev-0.3.5"
+# IMAGE="dstack-dev-0.3.5"
 DOCKER_IMAGE="xmregistry/crossmint-ts-tee:latest"
 NGINX_DOCKER_IMAGE="xmregistry/crossmint-ts-tee-nginx:latest"
 SKIP_BUILD=false
@@ -34,7 +34,7 @@ print_usage() {
     echo "  --disk-size VALUE  Disk size in GB (default: $DISK_SIZE)"
     echo "  --name VALUE       Deployment name (default: $NAME)"
     echo "  --env-file PATH    Path to env file (default: $ENV_FILE)"
-    echo "  --image VALUE      Phala image to use (default: $IMAGE)"
+    echo "  --image VALUE      Phala image to use (default: none)"
     echo "  --docker-image VALUE Docker image name (will be tagged with random hash)"
     echo "  --nginx-image VALUE Nginx Docker image name (will be tagged with random hash)"
     echo "  --docker-username VALUE Docker username (default: $DOCKER_USERNAME)"
@@ -229,16 +229,32 @@ build_image() {
 deploy() {
     build_image
 
-    echo "Deploying TEE-TS to Phala..."
-    $PHALA_CMD cvms create \
-        --vcpu "$VCPU" \
-        --memory "$MEMORY" \
-        --disk-size "$DISK_SIZE" \
-        -n "$NAME" \
-        --env-file "$ENV_FILE" \
-        -c "$COMPOSE_FILE" \
-        --image "$IMAGE" \
-        --debug
+    echo "📋 Docker Compose Configuration:"
+    echo "================================="
+    if [ -f "$COMPOSE_FILE" ]; then
+        cat "$COMPOSE_FILE"
+    else
+        echo "❌ Compose file not found: $COMPOSE_FILE"
+        exit 1
+    fi
+    echo "================================="
+    echo ""
+
+    echo "🚀 Deploying TEE-TS to Phala..."
+
+    # Construct the command
+    DEPLOY_CMD="$PHALA_CMD cvms create --vcpu $VCPU --memory $MEMORY --disk-size $DISK_SIZE -n $NAME --env-file $ENV_FILE -c $COMPOSE_FILE --debug"
+
+    if [[ -n "$IMAGE" ]]; then
+        DEPLOY_CMD="$DEPLOY_CMD --image $IMAGE"
+    fi
+
+    echo "📝 Executing command:"
+    echo "   $DEPLOY_CMD"
+    echo ""
+
+    # Execute the command
+    $DEPLOY_CMD
 
     echo "✅ Deployment successful!"
 }
