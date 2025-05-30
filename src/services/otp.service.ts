@@ -4,7 +4,10 @@ interface OTPRequest {
 	authId: string;
 	createdAt: number;
 	deviceId: string;
+	failedAttempts: number;
 }
+const MAX_FAILED_ATTEMPTS = 3;
+
 export interface OTPService {
 	/**
 	 * Generate a new OTP and store it
@@ -60,6 +63,7 @@ export class InMemoryOTPService implements OTPService {
 			authId,
 			createdAt: Date.now(),
 			deviceId,
+			failedAttempts: 0,
 		});
 
 		return otp;
@@ -92,6 +96,17 @@ export class InMemoryOTPService implements OTPService {
 		}
 
 		if (request.otp !== otpCode) {
+			request.failedAttempts++;
+			if (request.failedAttempts >= MAX_FAILED_ATTEMPTS) {
+				throw new Response(
+					JSON.stringify({
+						error: "Too many failed attempts. Please start over.",
+					}),
+					{
+						status: 401,
+					},
+				);
+			}
 			throw new Response(JSON.stringify({ error: "Invalid OTP" }), {
 				status: 401,
 			});
