@@ -6,6 +6,8 @@ interface OTPRequest {
 	deviceId: string;
 	failedAttempts: number;
 }
+const MAX_FAILED_ATTEMPTS = 3;
+
 export interface OTPService {
 	/**
 	 * Generate a new OTP and store it
@@ -95,7 +97,7 @@ export class InMemoryOTPService implements OTPService {
 
 		if (request.otp !== otpCode) {
 			request.failedAttempts++;
-			if (request.failedAttempts >= 3) {
+			if (request.failedAttempts >= MAX_FAILED_ATTEMPTS) {
 				throw new Response(
 					JSON.stringify({
 						error: "Too many failed attempts. Please start over.",
