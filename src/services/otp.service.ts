@@ -21,18 +21,12 @@ interface OTPSecurityConfig {
 	maxDevicesPerPair: number; // X - max devices per signerId/authId pair
 	deviceLimitWindowHours: number; // Y - time window for device limit (in hours)
 	maxFailedAttempts: number; // Z - max failed attempts before invalidating OTP
-	otpLength: number; // 6 or 8 digits
 }
 
 const OTP_SECURITY_CONFIG: OTPSecurityConfig = {
 	maxDevicesPerPair: 3,
 	deviceLimitWindowHours: 6,
 	maxFailedAttempts: 3,
-	otpLength: 6,
-};
-
-const OTP_CONFIG = {
-	otpLength: 6,
 };
 
 export interface OTPService {
@@ -55,7 +49,6 @@ export interface OTPService {
 export class InMemoryOTPService implements OTPService {
 	private static instance: InMemoryOTPService | null = null;
 	private pendingRequests = new Map<string, OTPRequest>();
-	private onboardingHistory = new Map<string, DeviceOnboardingRecord[]>(); // Key: signerId:authId
 	private cleanupInterval: number | NodeJS.Timeout | null = null;
 	private readonly otpExpiryTime = 5 * 60 * 1000;
 	private readonly otpExpiryMessageGracePeriod = 60 * 60 * 1000;
@@ -204,7 +197,7 @@ export class InMemoryOTPService implements OTPService {
 	}
 
 	private createRandomOTP(): string {
-		const length = OTP_CONFIG.otpLength;
+		const length = 6;
 		const maxValue = 10 ** length - 1;
 
 		const randomBytes = new Uint8Array(4);
