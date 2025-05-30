@@ -94,6 +94,55 @@ describe("InMemoryOTPService", () => {
 		}
 	});
 
+	it("should throw an error after 3 failed OTP attempts", async () => {
+		// Arrange
+		const signerId = "test-signer-id";
+		const authId = "email:test@example.com";
+		const deviceId = "test-device-id";
+
+		const otp = otpService.generateOTP(signerId, authId, deviceId);
+		const incorrectOTP = "999999"; // Incorrect OTP
+
+		// Act & Assert - First 2 failed attempts should return "Invalid OTP"
+		for (let attempt = 1; attempt <= 2; attempt++) {
+			try {
+				otpService.verifyOTP(deviceId, incorrectOTP);
+				expect(true).toBe(false); // Should not reach here
+			} catch (error) {
+				expect(error).toBeInstanceOf(Response);
+				expect((error as Response).status).toBe(401);
+				const errorData = await (error as Response).json();
+				expect(errorData.error).toBe("Invalid OTP");
+			}
+		}
+
+		// Third failed attempt should return "Too many failed attempts"
+		try {
+			otpService.verifyOTP(deviceId, incorrectOTP);
+			expect(true).toBe(false); // Should not reach here
+		} catch (error) {
+			expect(error).toBeInstanceOf(Response);
+			expect((error as Response).status).toBe(401);
+			const errorData = await (error as Response).json();
+			expect(errorData.error).toBe(
+				"Too many failed attempts. Please start over.",
+			);
+		}
+
+		// Fourth attempt should still return "Too many failed attempts"
+		try {
+			otpService.verifyOTP(deviceId, incorrectOTP);
+			expect(true).toBe(false); // Should not reach here
+		} catch (error) {
+			expect(error).toBeInstanceOf(Response);
+			expect((error as Response).status).toBe(401);
+			const errorData = await (error as Response).json();
+			expect(errorData.error).toBe(
+				"Too many failed attempts. Please start over.",
+			);
+		}
+	});
+
 	it("should throw an error when authentication is not pending", async () => {
 		// Arrange
 		const nonExistentDeviceId = "non-existent-device-id";
