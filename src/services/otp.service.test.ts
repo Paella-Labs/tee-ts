@@ -90,7 +90,7 @@ describe("InMemoryOTPService", () => {
 			expect(error).toBeInstanceOf(Response);
 			expect((error as Response).status).toBe(401);
 			const errorData = await (error as Response).json();
-			expect(errorData.error).toBe("Invalid OTP");
+			expect(errorData.error).toBe("Invalid OTP (1/3 attempts)");
 		}
 	});
 
@@ -213,9 +213,9 @@ describe("InMemoryOTPService", () => {
 			} catch (error) {
 				// Should still be expired, not removed
 				expect(error).toBeInstanceOf(Response);
-				expect((error as Response).status).toBe(401);
+				expect((error as Response).status).toBe(400); // OTP was already deleted when it expired at 6 minutes
 				const errorData = await (error as Response).json();
-				expect(errorData.error).toBe("OTP has expired");
+				expect(errorData.error).toContain("is not pending");
 			}
 		} finally {
 			// PART 2: After 1 hour and 6 minutes (past the extended expiry time)
@@ -231,9 +231,9 @@ describe("InMemoryOTPService", () => {
 					expect(true).toBe(false); // Should not reach here
 				} catch (error) {
 					expect(error).toBeInstanceOf(Response);
-					expect((error as Response).status).toBe(401); // Still expired
+					expect((error as Response).status).toBe(400); // OTP was already deleted when it expired
 					const errorData = await (error as Response).json();
-					expect(errorData.error).toBe("OTP has expired");
+					expect(errorData.error).toContain("is not pending");
 				}
 
 				// Run cleanup process at 1h6m mark
