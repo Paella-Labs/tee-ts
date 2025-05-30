@@ -7,7 +7,7 @@ export const getAttestationHandler = async (c: AppContext) => {
 	const result = await new TappdClient().tdxQuote(new Uint8Array(pubKeyBuffer));
 
 	return c.json({
-		quote: result.quote,
+		...result,
 		publicKey: Buffer.from(pubKeyBuffer).toString("base64"),
 	});
 };
