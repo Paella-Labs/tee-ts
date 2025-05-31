@@ -169,8 +169,6 @@ export class InMemoryOTPService implements OTPService {
 				);
 			}
 
-			this.pendingRequests.set(deviceId, request);
-
 			throw new Response(
 				JSON.stringify({
 					error: `Invalid OTP (${
