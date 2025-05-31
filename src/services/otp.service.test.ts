@@ -239,10 +239,10 @@ describe("InMemoryOTPService - Security Audit", () => {
 			// SETUP: Generate OTP
 			const validOtp = otpService.generateOTP(signerId, authId, deviceId);
 
-			// ACT: Make exactly 3 failed attempts (which should still allow the OTP to exist)
+			// ACT: Make 2 failed attempts (which should still allow the OTP to exist)
 			for (
 				let attempt = 1;
-				attempt <= SECURITY_CONFIG.MAX_FAILED_ATTEMPTS;
+				attempt < SECURITY_CONFIG.MAX_FAILED_ATTEMPTS;
 				attempt++
 			) {
 				try {
@@ -254,12 +254,12 @@ describe("InMemoryOTPService - Security Audit", () => {
 				}
 			}
 
-			// ASSERT: Fourth attempt with wrong OTP should invalidate the OTP completely
+			// ASSERT: Third failed attempt should invalidate the OTP completely
 			try {
-				otpService.verifyOTP(deviceId, "111111"); // 4th failed attempt should invalidate
+				otpService.verifyOTP(deviceId, "111111"); // 3rd failed attempt should invalidate
 				expect(true).toBe(false);
 			} catch (error) {
-				// SECURITY VALIDATION: OTP should be invalidated after exceeding max attempts
+				// SECURITY VALIDATION: OTP should be invalidated after reaching max attempts
 				expect(error).toBeInstanceOf(Response);
 				expect((error as Response).status).toBe(401);
 
