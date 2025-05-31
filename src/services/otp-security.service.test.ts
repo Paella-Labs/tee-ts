@@ -31,26 +31,18 @@ describe("InMemoryOTPSecurityService", () => {
 	describe("validateDeviceOnboarding", () => {
 		it("should allow device onboarding when under limit", () => {
 			expect(() => {
-				service.validateDeviceOnboarding("signer1", "auth1", "device1");
-			}).not.toThrow();
-		});
-
-		it("should allow same device to be re-onboarded", () => {
-			service.recordDeviceOnboarding("signer1", "auth1", "device1");
-
-			expect(() => {
-				service.validateDeviceOnboarding("signer1", "auth1", "device1");
+				service.validateDeviceOnboarding("signer1", "auth1");
 			}).not.toThrow();
 		});
 
 		it("should throw error when device limit exceeded", async () => {
 			// Record max devices (3)
 			for (let i = 1; i <= 3; i++) {
-				service.recordDeviceOnboarding("signer1", "auth1", `device${i}`);
+				service.recordDeviceOnboarding("signer1", "auth1");
 			}
 
 			try {
-				service.validateDeviceOnboarding("signer1", "auth1", "device4");
+				service.validateDeviceOnboarding("signer1", "auth1");
 				expect(true).toBe(false);
 			} catch (error) {
 				expect(error).toBeInstanceOf(Response);
@@ -64,14 +56,14 @@ describe("InMemoryOTPSecurityService", () => {
 		it("should allow onboarding after time window expires", () => {
 			// Record max devices
 			for (let i = 1; i <= 3; i++) {
-				service.recordDeviceOnboarding("signer1", "auth1", `device${i}`);
+				service.recordDeviceOnboarding("signer1", "auth1");
 			}
 
 			// Mock time 7 hours later (beyond 6-hour window)
 			Date.now = mock(() => originalNow() + 7 * 60 * 60 * 1000);
 
 			expect(() => {
-				service.validateDeviceOnboarding("signer1", "auth1", "device4");
+				service.validateDeviceOnboarding("signer1", "auth1");
 			}).not.toThrow();
 		});
 	});
@@ -79,34 +71,34 @@ describe("InMemoryOTPSecurityService", () => {
 	describe("recordDeviceOnboarding", () => {
 		it("should record device onboarding successfully", () => {
 			expect(() => {
-				service.recordDeviceOnboarding("signer1", "auth1", "device1");
+				service.recordDeviceOnboarding("signer1", "auth1");
 			}).not.toThrow();
 		});
 
 		it("should handle multiple onboardings for different pairs", () => {
-			service.recordDeviceOnboarding("signer1", "auth1", "device1");
-			service.recordDeviceOnboarding("signer2", "auth2", "device2");
+			service.recordDeviceOnboarding("signer1", "auth1");
+			service.recordDeviceOnboarding("signer2", "auth2");
 
 			// Both should be valid
 			expect(() => {
-				service.validateDeviceOnboarding("signer1", "auth1", "device3");
-				service.validateDeviceOnboarding("signer2", "auth2", "device4");
+				service.validateDeviceOnboarding("signer1", "auth1");
+				service.validateDeviceOnboarding("signer2", "auth2");
 			}).not.toThrow();
 		});
 	});
 
 	describe("recordFailedAttempt", () => {
 		it("should return false when under max attempts", () => {
-			expect(service.recordFailedAttempt("device1", 1)).toBe(false);
-			expect(service.recordFailedAttempt("device1", 2)).toBe(false);
+			expect(service.validateFailedAttempt("device1", 1)).toBe(false);
+			expect(service.validateFailedAttempt("device1", 2)).toBe(false);
 		});
 
 		it("should return true when max attempts reached", () => {
-			expect(service.recordFailedAttempt("device1", 3)).toBe(true);
+			expect(service.validateFailedAttempt("device1", 3)).toBe(true);
 		});
 
 		it("should return true when exceeding max attempts", () => {
-			expect(service.recordFailedAttempt("device1", 4)).toBe(true);
+			expect(service.validateFailedAttempt("device1", 4)).toBe(true);
 		});
 	});
 
@@ -119,8 +111,8 @@ describe("InMemoryOTPSecurityService", () => {
 	describe("cleanupOldRecords", () => {
 		it("should remove old onboarding records", () => {
 			// Record some devices
-			service.recordDeviceOnboarding("signer1", "auth1", "device1");
-			service.recordDeviceOnboarding("signer1", "auth1", "device2");
+			service.recordDeviceOnboarding("signer1", "auth1");
+			service.recordDeviceOnboarding("signer1", "auth1");
 
 			// Mock time 13 hours later (beyond 2x window = 12 hours)
 			Date.now = mock(() => originalNow() + 13 * 60 * 60 * 1000);
@@ -130,7 +122,7 @@ describe("InMemoryOTPSecurityService", () => {
 			// Should now allow 3 new devices since old records are cleaned
 			expect(() => {
 				for (let i = 1; i <= 3; i++) {
-					service.validateDeviceOnboarding("signer1", "auth1", `newdevice${i}`);
+					service.validateDeviceOnboarding("signer1", "auth1");
 				}
 			}).not.toThrow();
 		});
@@ -138,7 +130,7 @@ describe("InMemoryOTPSecurityService", () => {
 		it("should not remove recent records", () => {
 			// Record max devices
 			for (let i = 1; i <= 3; i++) {
-				service.recordDeviceOnboarding("signer1", "auth1", `device${i}`);
+				service.recordDeviceOnboarding("signer1", "auth1");
 			}
 
 			// Mock time 5 hours later (within cleanup threshold)
@@ -148,7 +140,7 @@ describe("InMemoryOTPSecurityService", () => {
 
 			// Should still be at limit
 			try {
-				service.validateDeviceOnboarding("signer1", "auth1", "device4");
+				service.validateDeviceOnboarding("signer1", "auth1");
 				expect(true).toBe(false);
 			} catch (error) {
 				expect(error).toBeInstanceOf(Response);

@@ -1,7 +1,6 @@
 interface DeviceOnboardingRecord {
 	signerId: string;
 	authId: string;
-	deviceId: string;
 	onboardedAt: number;
 }
 
@@ -22,11 +21,7 @@ export interface OTPSecurityService {
 	 * Check if a device can be onboarded for a signerId/authId pair
 	 * @throws Response error if device limit exceeded
 	 */
-	validateDeviceOnboarding(
-		signerId: string,
-		authId: string,
-		deviceId: string,
-	): void;
+	validateDeviceOnboarding(signerId: string, authId: string): void;
 
 	/**
 	 * Record a successful device onboarding
@@ -41,7 +36,7 @@ export interface OTPSecurityService {
 	 * Track a failed OTP attempt
 	 * @returns true if OTP should be invalidated due to max attempts reached
 	 */
-	recordFailedAttempt(deviceId: string, currentAttempts: number): boolean;
+	validateFailedAttempt(deviceId: string, currentAttempts: number): boolean;
 
 	/**
 	 * Get maximum allowed failed attempts
@@ -84,27 +79,18 @@ export class InMemoryOTPSecurityService implements OTPSecurityService {
 	 * Check if a device can be onboarded for a signerId/authId pair
 	 * @throws Response error if device limit exceeded
 	 */
-	public validateDeviceOnboarding(
-		signerId: string,
-		authId: string,
-		deviceId: string,
-	): void {
+	public validateDeviceOnboarding(signerId: string, authId: string): void {
 		const pairKey = `${signerId}:${authId}`;
 		const currentTime = Date.now();
-		const windowMs = this.config.deviceLimitWindowHours * 60 * 60 * 1000;
+		const rollingOnboardingWindowMs =
+			this.config.deviceLimitWindowHours * 60 * 60 * 1000;
 
 		const records = this.onboardingHistory.get(pairKey) || [];
 
-		const recentOnboardings = records.filter(
-			(record) => currentTime - record.onboardedAt < windowMs,
-		);
-
-		const existingDevice = recentOnboardings.find(
-			(record) => record.deviceId === deviceId,
-		);
-		if (existingDevice) {
-			return;
-		}
+		const recentOnboardings = records.filter((record) => {
+			const age = currentTime - record.onboardedAt;
+			return age < rollingOnboardingWindowMs;
+		});
 
 		if (
 			recentOnboardings.length >= this.config.maxDevicesPerSignerProjectPair
@@ -112,7 +98,8 @@ export class InMemoryOTPSecurityService implements OTPSecurityService {
 			const oldestOnboarding = Math.min(
 				...recentOnboardings.map((r) => r.onboardedAt),
 			);
-			const timeUntilNextSlot = windowMs - (currentTime - oldestOnboarding);
+			const timeUntilNextSlot =
+				rollingOnboardingWindowMs - (currentTime - oldestOnboarding);
 			const hoursUntilNextSlot = Math.ceil(
 				timeUntilNextSlot / (60 * 60 * 1000),
 			);
@@ -136,32 +123,27 @@ export class InMemoryOTPSecurityService implements OTPSecurityService {
 	/**
 	 * Record a successful device onboarding
 	 */
-	public recordDeviceOnboarding(
-		signerId: string,
-		authId: string,
-		deviceId: string,
-	): void {
+	public recordDeviceOnboarding(signerId: string, authId: string): void {
 		const pairKey = `${signerId}:${authId}`;
 		const records = this.onboardingHistory.get(pairKey) || [];
 
 		records.push({
 			signerId,
 			authId,
-			deviceId,
 			onboardedAt: Date.now(),
 		});
 
 		this.onboardingHistory.set(pairKey, records);
 		console.log(
-			`[Security] Recorded device onboarding: ${deviceId} for ${signerId}:${authId}`,
+			`[Security] Recorded device onboarding for ${signerId}:${authId}`,
 		);
 	}
 
 	/**
-	 * Track a failed OTP attempt
+	 * Determine if a failed attempt should invalidate
 	 * @returns true if OTP should be invalidated due to max attempts reached
 	 */
-	public recordFailedAttempt(
+	public validateFailedAttempt(
 		deviceId: string,
 		currentAttempts: number,
 	): boolean {

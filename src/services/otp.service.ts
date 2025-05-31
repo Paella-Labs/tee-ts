@@ -9,26 +9,6 @@ interface OTPRequest {
 	deviceId: string;
 	failedAttempts: number; // Track failed verification attempts
 }
-
-interface DeviceOnboardingRecord {
-	signerId: string;
-	authId: string;
-	deviceId: string;
-	onboardedAt: number;
-}
-
-interface OTPSecurityConfig {
-	maxDevicesPerPair: number; // X - max devices per signerId/authId pair
-	deviceLimitWindowHours: number; // Y - time window for device limit (in hours)
-	maxFailedAttempts: number; // Z - max failed attempts before invalidating OTP
-}
-
-const OTP_SECURITY_CONFIG: OTPSecurityConfig = {
-	maxDevicesPerPair: 3,
-	deviceLimitWindowHours: 6,
-	maxFailedAttempts: 3,
-};
-
 export interface OTPService {
 	/**
 	 * Generate a new OTP and store it
@@ -49,7 +29,7 @@ export interface OTPService {
 export class InMemoryOTPService implements OTPService {
 	private static instance: InMemoryOTPService | null = null;
 	private pendingRequests = new Map<string, OTPRequest>();
-	private cleanupInterval: number | NodeJS.Timeout | null = null;
+	private cleanupInterval: NodeJS.Timeout | null = null;
 	private readonly otpExpiryTime = 5 * 60 * 1000;
 	private readonly otpExpiryMessageGracePeriod = 60 * 60 * 1000;
 	private readonly securityService: OTPSecurityService;
@@ -82,7 +62,7 @@ export class InMemoryOTPService implements OTPService {
 		authId: string,
 		deviceId: string,
 	): string {
-		this.securityService.validateDeviceOnboarding(signerId, authId, deviceId);
+		this.securityService.validateDeviceOnboarding(signerId, authId);
 
 		const otp = this.createRandomOTP();
 		console.log("[DEBUG] Generated OTP:", otp);
@@ -129,7 +109,7 @@ export class InMemoryOTPService implements OTPService {
 		if (request.otp !== otpCode) {
 			request.failedAttempts++;
 
-			const shouldInvalidate = this.securityService.recordFailedAttempt(
+			const shouldInvalidate = this.securityService.validateFailedAttempt(
 				deviceId,
 				request.failedAttempts,
 			);
