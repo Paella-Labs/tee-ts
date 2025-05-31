@@ -3,7 +3,7 @@ interface DeviceOnboardingRecord {
 	authId: string;
 	onboardedAt: number;
 }
-export class DeviceOnboardingTracker {
+export class OnboardingTracker {
 	private onboardingHistory = new Map<string, DeviceOnboardingRecord[]>();
 
 	constructor(
@@ -15,7 +15,7 @@ export class DeviceOnboardingTracker {
 	 * Check if a device can be onboarded for a signerId/authId pair
 	 * @throws Response error if attempt limit exceeded
 	 */
-	public trackDeviceOnboardingAttempt(signerId: string, authId: string): void {
+	public trackAttempt(signerId: string, authId: string): void {
 		const pairKey = `${signerId}:${authId}`;
 		const currentTime = Date.now();
 
