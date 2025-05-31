@@ -51,13 +51,11 @@ export class OnboardingTracker {
 			);
 		}
 
-		// TODO fix potential timing attack
 		records.push({
 			signerId,
 			authId,
 			onboardedAt: Date.now(),
 		});
-
 		this.onboardingHistory.set(pairKey, records);
 		console.log(
 			`[Security] Recorded device onboarding for ${signerId}:${authId}`,
