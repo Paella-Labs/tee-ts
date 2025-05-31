@@ -62,7 +62,17 @@ export class InMemoryOTPSecurityService implements OTPSecurityService {
 	private onboardingHistory = new Map<string, DeviceOnboardingRecord[]>();
 	private readonly config: OTPSecurityConfig = OTP_SECURITY_CONFIG;
 
-	private constructor() {}
+	private constructor() {
+		console.log(
+			"OTP security service configuration: ",
+			"Maximum number of devices per signerId/authId pair: ",
+			this.config.maxDevicesPerSignerProjectPair,
+			"Device limit window hours: ",
+			this.config.deviceLimitWindowHours,
+			"Maximum number of failed attempts: ",
+			this.config.maxFailedAttempts,
+		);
+	}
 
 	public static getInstance(): InMemoryOTPSecurityService {
 		if (!InMemoryOTPSecurityService.instance) {
