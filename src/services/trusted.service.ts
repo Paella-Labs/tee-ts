@@ -18,17 +18,6 @@ export class TrustedService {
 		authId: string,
 		keyType: KeyType,
 	): Promise<PublicKeyResponse> {
-		if (keyType !== "ed25519" && keyType !== "secp256k1") {
-			throw new Response(
-				JSON.stringify({
-					error: `keyType ${keyType} not yet supported`,
-				}),
-				{
-					status: 400,
-				},
-			);
-		}
-
 		return await this.keyService.derivePublicKey(signerId, authId, keyType);
 	}
 
