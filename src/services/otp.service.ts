@@ -1,5 +1,4 @@
-import type { OTPSecurityService } from "./otp-security.service";
-import { InMemoryOTPSecurityService } from "./otp-security.service";
+import { DeviceOnboardingTracker } from "./device-onboarding-tracker.service";
 
 interface OTPRequest {
 	otp: string;
@@ -7,8 +6,15 @@ interface OTPRequest {
 	authId: string;
 	createdAt: number;
 	deviceId: string;
-	failedAttempts: number; // Track failed verification attempts
+	failedAttempts: number;
 }
+
+const OTP_SECURITY_CONFIG = {
+	onboardingLimitWindow: 6 * 60 * 60 * 1000,
+	maxOnboardsPerWindow: 3,
+	maxFailedAttempts: 3,
+} as const;
+
 export interface OTPService {
 	/**
 	 * Generate a new OTP and store it
@@ -32,22 +38,22 @@ export class InMemoryOTPService implements OTPService {
 	private cleanupInterval: NodeJS.Timeout | null = null;
 	private readonly otpExpiryTime = 5 * 60 * 1000;
 	private readonly otpExpiryMessageGracePeriod = 60 * 60 * 1000;
-	private readonly securityService: OTPSecurityService;
 
-	private constructor(securityService: OTPSecurityService) {
-		this.securityService = securityService;
+	private constructor(
+		private readonly securityService: DeviceOnboardingTracker,
+	) {
 		this.startCleanupInterval();
 	}
 
 	/**
 	 * Get singleton instance of InMemoryOTPService
 	 */
-	public static getInstance(
-		securityService?: OTPSecurityService,
-	): InMemoryOTPService {
+	public static getInstance(): InMemoryOTPService {
 		if (!InMemoryOTPService.instance) {
-			const security =
-				securityService || InMemoryOTPSecurityService.getInstance();
+			const security = new DeviceOnboardingTracker(
+				OTP_SECURITY_CONFIG.onboardingLimitWindow * 60 * 60 * 1000,
+				OTP_SECURITY_CONFIG.maxOnboardsPerWindow,
+			);
 			InMemoryOTPService.instance = new InMemoryOTPService(security);
 		}
 		return InMemoryOTPService.instance;
@@ -62,7 +68,7 @@ export class InMemoryOTPService implements OTPService {
 		authId: string,
 		deviceId: string,
 	): string {
-		this.securityService.validateDeviceOnboarding(signerId, authId);
+		this.securityService.trackDeviceOnboardingAttempt(signerId, authId);
 
 		const otp = this.createRandomOTP();
 		console.log("[DEBUG] Generated OTP:", otp);
@@ -98,6 +104,7 @@ export class InMemoryOTPService implements OTPService {
 			);
 		}
 
+		// Check OTP is not expired
 		const currentTime = Date.now();
 		if (currentTime - request.createdAt > this.otpExpiryTime) {
 			this.pendingRequests.delete(deviceId);
@@ -106,19 +113,15 @@ export class InMemoryOTPService implements OTPService {
 			});
 		}
 
+		// Handle incorrect OTP
 		if (request.otp !== otpCode) {
 			request.failedAttempts++;
 
-			const shouldInvalidate = this.securityService.validateFailedAttempt(
-				deviceId,
-				request.failedAttempts,
-			);
-
-			if (shouldInvalidate) {
+			if (request.failedAttempts > OTP_SECURITY_CONFIG.maxFailedAttempts) {
 				this.pendingRequests.delete(deviceId);
 				throw new Response(
 					JSON.stringify({
-						error: `OTP invalidated after ${this.securityService.getMaxFailedAttempts()} failed attempts`,
+						error: `OTP invalidated after ${OTP_SECURITY_CONFIG.maxFailedAttempts} failed attempts`,
 					}),
 					{
 						status: 401,
@@ -132,7 +135,7 @@ export class InMemoryOTPService implements OTPService {
 				JSON.stringify({
 					error: `Invalid OTP (${
 						request.failedAttempts
-					}/${this.securityService.getMaxFailedAttempts()} attempts)`,
+					}/${OTP_SECURITY_CONFIG.maxFailedAttempts} attempts)`,
 				}),
 				{
 					status: 401,
@@ -140,13 +143,8 @@ export class InMemoryOTPService implements OTPService {
 			);
 		}
 
-		this.securityService.recordDeviceOnboarding(
-			request.signerId,
-			request.authId,
-			deviceId,
-		);
+		// On success
 		this.pendingRequests.delete(deviceId);
-
 		return request;
 	}
 

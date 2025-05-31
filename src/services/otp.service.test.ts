@@ -11,10 +11,12 @@ import { InMemoryOTPService } from "./otp.service";
 
 describe("InMemoryOTPService", () => {
 	let otpService: InMemoryOTPService;
+	let testCounter = 0;
 
 	beforeEach(() => {
 		// Get a fresh instance for each test
 		otpService = InMemoryOTPService.getInstance();
+		testCounter++;
 
 		// Mock console methods to avoid cluttering test output
 		console.log = mock(() => {});
@@ -28,9 +30,9 @@ describe("InMemoryOTPService", () => {
 	});
 
 	it("should generate and verify an OTP successfully", () => {
-		// Arrange
-		const signerId = "test-signer-id";
-		const authId = "email:test@example.com";
+		// Arrange - use unique identifiers to avoid device onboarding limits
+		const signerId = `test-signer-id-${testCounter}`;
+		const authId = `email:test${testCounter}@example.com`;
 		const deviceId = "test-device-id";
 
 		// Act
@@ -45,9 +47,9 @@ describe("InMemoryOTPService", () => {
 	});
 
 	it("should not allow verification of expired OTPs", async () => {
-		// Arrange
-		const signerId = "test-signer-id";
-		const authId = "email:test@example.com";
+		// Arrange - use unique identifiers to avoid device onboarding limits
+		const signerId = `test-signer-id-${testCounter}`;
+		const authId = `email:test${testCounter}@example.com`;
 		const deviceId = "test-device-id";
 
 		// Generate an OTP
@@ -74,9 +76,9 @@ describe("InMemoryOTPService", () => {
 	});
 
 	it("should throw an error when OTP is incorrect", async () => {
-		// Arrange
-		const signerId = "test-signer-id";
-		const authId = "email:test@example.com";
+		// Arrange - use unique identifiers to avoid onboarding limits
+		const signerId = `test-signer-id-${testCounter}`;
+		const authId = `email:test${testCounter}@example.com`;
 		const deviceId = "test-device-id";
 
 		otpService.generateOTP(signerId, authId, deviceId);
@@ -113,9 +115,9 @@ describe("InMemoryOTPService", () => {
 	});
 
 	it("should ensure OTP cannot be verified twice", async () => {
-		// Arrange
-		const signerId = "test-signer-id";
-		const authId = "email:test@example.com";
+		// Arrange - use unique identifiers to avoid onboarding limits
+		const signerId = `test-signer-id-${testCounter}`;
+		const authId = `email:test${testCounter}@example.com`;
 		const deviceId = "test-device-id";
 
 		const otp = otpService.generateOTP(signerId, authId, deviceId);
@@ -138,9 +140,9 @@ describe("InMemoryOTPService", () => {
 	});
 
 	it("should clean up expired OTPs through cleanup process", async () => {
-		// Arrange
-		const signerId = "test-signer-id";
-		const authId = "email:test@example.com";
+		// Arrange - use unique identifiers to avoid onboarding limits
+		const signerId = `test-signer-id-${testCounter}`;
+		const authId = `email:test${testCounter}@example.com`;
 		const deviceId = "test-device-id";
 
 		// Generate an OTP
@@ -174,9 +176,9 @@ describe("InMemoryOTPService", () => {
 	});
 
 	it("should only clean up OTPs that are at least one hour past their expiry", async () => {
-		// Arrange
-		const signerId = "test-signer-id";
-		const authId = "email:test@example.com";
+		// Arrange - use unique identifiers to avoid onboarding limits
+		const signerId = `test-signer-id-${testCounter}`;
+		const authId = `email:test${testCounter}@example.com`;
 		const deviceId = "test-device-id";
 
 		// Generate an OTP

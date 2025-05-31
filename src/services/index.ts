@@ -6,8 +6,6 @@ import { InMemoryOTPService } from "./otp.service";
 import { KeyService } from "./key.service";
 import { SendgridEmailService } from "./email.service";
 import { DatadogMetricsService } from "./metrics.service";
-import type { z } from "zod";
-import { InMemoryOTPSecurityService } from "./otp-security.service";
 
 interface ServiceContainer {
 	trustedService: TrustedService;
@@ -25,12 +23,8 @@ export async function initializeServices(
 	await encryptionService.init();
 	console.log("Encryption service initialized successfully");
 
-	// Initialize OTP security service
-	const otpSecurityService = InMemoryOTPSecurityService.getInstance();
-	console.log("OTP security service initialized successfully");
-
 	// Initialize OTP service
-	const otpService = InMemoryOTPService.getInstance(otpSecurityService);
+	const otpService = InMemoryOTPService.getInstance();
 	console.log("OTP service initialized successfully");
 
 	// Initialize Email service
