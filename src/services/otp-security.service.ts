@@ -195,8 +195,4 @@ export class InMemoryOTPSecurityService implements OTPSecurityService {
 			console.log(`[Cleanup] Removed ${removedCount} old onboarding records`);
 		}
 	}
-
-	private reset(): void {
-		this.onboardingHistory.clear();
-	}
 }
