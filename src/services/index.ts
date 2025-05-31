@@ -6,7 +6,6 @@ import { InMemoryOTPService } from "./otp.service";
 import { KeyService } from "./key.service";
 import { SendgridEmailService } from "./email.service";
 import { DatadogMetricsService } from "./metrics.service";
-import type { z } from "zod";
 
 interface ServiceContainer {
 	trustedService: TrustedService;

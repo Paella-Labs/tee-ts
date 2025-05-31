@@ -6,7 +6,7 @@
 	"scripts": {
 		"start": "bun run src/index.ts",
 		"dev": "bun --hot run src/index.ts",
-		"test": "bun test ./src",
+		"test": "bun test ./src/**/*.test.ts",
 		"fmt": "bunx biome format --write .",
 		"knip": "knip"
 	},
