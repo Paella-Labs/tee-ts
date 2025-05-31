@@ -6,13 +6,13 @@ interface DeviceOnboardingRecord {
 }
 
 interface OTPSecurityConfig {
-	maxDevicesPerPair: number;
+	maxDevicesPerSignerProjectPair: number;
 	deviceLimitWindowHours: number;
 	maxFailedAttempts: number;
 }
 
 const OTP_SECURITY_CONFIG: OTPSecurityConfig = {
-	maxDevicesPerPair: 3,
+	maxDevicesPerSignerProjectPair: 3,
 	deviceLimitWindowHours: 6,
 	maxFailedAttempts: 3,
 };
@@ -64,9 +64,6 @@ export class InMemoryOTPSecurityService implements OTPSecurityService {
 
 	private constructor() {}
 
-	/**
-	 * Get singleton instance of InMemoryOTPSecurityService
-	 */
 	public static getInstance(): InMemoryOTPSecurityService {
 		if (!InMemoryOTPSecurityService.instance) {
 			InMemoryOTPSecurityService.instance = new InMemoryOTPSecurityService();
@@ -100,7 +97,9 @@ export class InMemoryOTPSecurityService implements OTPSecurityService {
 			return;
 		}
 
-		if (recentOnboardings.length >= this.config.maxDevicesPerPair) {
+		if (
+			recentOnboardings.length >= this.config.maxDevicesPerSignerProjectPair
+		) {
 			const oldestOnboarding = Math.min(
 				...recentOnboardings.map((r) => r.onboardedAt),
 			);
@@ -110,12 +109,12 @@ export class InMemoryOTPSecurityService implements OTPSecurityService {
 			);
 
 			console.log(
-				`[Security] Device limit exceeded for ${signerId}:${authId}. ${recentOnboardings.length}/${this.config.maxDevicesPerPair} devices in last ${this.config.deviceLimitWindowHours}h`,
+				`[Security] Device limit exceeded for ${signerId}:${authId}. ${recentOnboardings.length}/${this.config.maxDevicesPerSignerProjectPair} devices in last ${this.config.deviceLimitWindowHours}h`,
 			);
 
 			throw new Response(
 				JSON.stringify({
-					error: `Too many devices onboarded recently. Maximum ${this.config.maxDevicesPerPair} devices per ${this.config.deviceLimitWindowHours} hours. Try again in ${hoursUntilNextSlot} hour(s).`,
+					error: `Too many devices onboarded recently. Maximum ${this.config.maxDevicesPerSignerProjectPair} devices per ${this.config.deviceLimitWindowHours} hours. Try again in ${hoursUntilNextSlot} hour(s).`,
 					retryAfterHours: hoursUntilNextSlot,
 				}),
 				{
