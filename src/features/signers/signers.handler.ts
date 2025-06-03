@@ -18,7 +18,7 @@ export const derivePublicKeyHandler = async (c: AppContext) => {
 
 	console.log("[DEBUG] POST /v1/signers/derive-public-key - Body:", body);
 
-	const publicKey = await services.trustedService.preGenerateSigner(
+	const publicKey = await services.trustedService.derivePublicKey(
 		signerId,
 		authId,
 		keyType,
@@ -39,7 +39,7 @@ export const startOnboardingHandler = async (c: AppContext) => {
 		signerId,
 	} = body;
 
-	await services.trustedService.initiateSignerCreation(
+	await services.trustedService.startOnboarding(
 		signerId,
 		projectName,
 		authId,
@@ -85,7 +85,7 @@ export const completeOnboardingHandler = async (c: AppContext) => {
 	} = decryptedBody;
 
 	const { device, auth, deviceKeyShareHash, signerId } =
-		await services.trustedService.completeSignerCreation(deviceId, otp);
+		await services.trustedService.completeOnboarding(deviceId, otp);
 
 	const encryptedResponse = await services.encryptionService.encryptBase64(
 		{

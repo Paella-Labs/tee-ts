@@ -8,8 +8,8 @@ import { authMiddleware } from "middleware/auth.middleware";
 
 const attestation = new Hono<AppEnv>();
 
+attestation.use("*", authMiddleware());
 attestation.get("/", getAttestationHandler);
 attestation.get("/public-key", getTEEPublicKeyHandler); // primarily for local development
-attestation.use("*", authMiddleware());
 
 export default attestation;

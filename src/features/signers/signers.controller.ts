@@ -14,6 +14,8 @@ import {
 import { authMiddleware } from "middleware/auth.middleware";
 const signer = new Hono<AppEnv>();
 
+signer.use("*", authMiddleware());
+
 signer.post(
 	"/derive-public-key",
 	zValidator("json", SignerPreGenerationSchema, (result, c) => {
@@ -60,7 +62,5 @@ signer.post(
 	}),
 	completeOnboardingHandler,
 );
-
-signer.use("*", authMiddleware());
 
 export default signer;
