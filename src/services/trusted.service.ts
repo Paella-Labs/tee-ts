@@ -13,7 +13,7 @@ export class TrustedService {
 		private readonly encryptionService: EncryptionService,
 	) {}
 
-	public async preGenerateSigner(
+	public async derivePublicKey(
 		signerId: string,
 		authId: string,
 		keyType: KeyType,
@@ -24,7 +24,7 @@ export class TrustedService {
 	/**
 	 * Create a new signer and start OTP verification flow
 	 */
-	public async initiateSignerCreation(
+	public async startOnboarding(
 		signerId: string,
 		projectName: string,
 		authId: string,
@@ -58,7 +58,7 @@ export class TrustedService {
 	/**
 	 * Verify OTP and generate key shares
 	 */
-	public async completeSignerCreation(
+	public async completeOnboarding(
 		deviceId: string,
 		otp: string,
 	): Promise<{
