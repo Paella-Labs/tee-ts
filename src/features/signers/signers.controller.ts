@@ -12,8 +12,8 @@ import {
 	startOnboardingHandler,
 } from "./signers.handler";
 import { authMiddleware } from "middleware/auth.middleware";
-const signer = new Hono<AppEnv>();
 
+const signer = new Hono<AppEnv>();
 signer.use("*", authMiddleware());
 
 signer.post(
