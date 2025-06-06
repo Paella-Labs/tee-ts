@@ -1,8 +1,17 @@
 import { env } from "./config";
 import { createApp } from "./app";
+import { deriveEncryptionKey } from "./key";
+import { initializeServices } from "./services";
 
 async function main() {
-	const app = await createApp();
+	const encryptionKey = await deriveEncryptionKey();
+	console.log("Encryption key derived successfully");
+
+	// Step 2: Initialize services with the encryption key
+	const services = await initializeServices(env, encryptionKey);
+
+	// Step 3: Create the app with the initialized services
+	const app = await createApp(services);
 
 	const server = {
 		port: env.PORT,

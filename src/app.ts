@@ -7,13 +7,11 @@ import { globalErrorHandler } from "./middleware/error.handler";
 
 import attestationController from "./features/attestation/attestation.controller";
 import healthController from "./features/health/health.controller";
-import { initializeServices } from "./services";
 import { requestLogger } from "middleware/logger.middleware";
 import { httpMetricsMiddleware } from "middleware/metrics.middleware";
 import logger from "logging/logger";
 
-export async function createApp() {
-	const services = await initializeServices(env);
+export async function createApp(services: ServiceInstances) {
 	const app = new Hono<AppEnv>();
 
 	addMiddleware(app, services);

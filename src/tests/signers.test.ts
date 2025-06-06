@@ -1,12 +1,16 @@
 import "./setup"; // Must be imported first to set up environment variables
 import { describe, expect, it } from "bun:test";
 import { createApp } from "../app";
+import { deriveDevEncryptionKey } from "../key";
+import { initializeServices } from "../services";
 import { env } from "../config";
 
 describe("Signers", () => {
 	describe("derive-public-key", () => {
 		it("should properly handle a correct request", async () => {
-			const app = await createApp();
+			const encryptionKey = await deriveDevEncryptionKey();
+			const services = await initializeServices(env, encryptionKey);
+			const app = await createApp(services);
 
 			const req = new Request("http://localhost/v1/signers/derive-public-key", {
 				headers: {
