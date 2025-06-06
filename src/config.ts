@@ -24,6 +24,7 @@ export const ENVSchema = z.object({
 		.string()
 		.default("true")
 		.transform((val) => val === "true"),
+	DSTACK_SIMULATOR_ENDPOINT: z.string().optional(),
 });
 
 export type EnvConfig = z.infer<typeof ENVSchema>;
