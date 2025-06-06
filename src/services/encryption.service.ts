@@ -55,8 +55,6 @@ export class EncryptionService {
 	}
 
 	async init() {
-		// Initialize TEE encryption key pair from hardware-backed derivation
-		// This establishes the cryptographic identity for this TEE instance
 		this.TEEEncryptionKey = await this.encryptionKey();
 	}
 
