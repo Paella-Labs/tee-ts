@@ -6,6 +6,7 @@ import {
 } from "@hpke/core";
 import { FF1 } from "@noble/ciphers/ff1";
 import { TappdClient } from "@phala/dstack-sdk";
+import { env } from "config";
 const OTP_RADIX = 10;
 
 /**
@@ -301,7 +302,7 @@ export class EncryptionService {
 	 */
 	private async encryptionKey(): Promise<CryptoKeyPair> {
 		// fetch deterministic key material from Dstack
-		const client = new TappdClient("http://localhost:8090");
+		const client = new TappdClient(env.DSTACK_SIMULATOR_ENDPOINT);
 		const key = await client.deriveKey("encryption-identity-key"); // X.509 private key in PEM format
 
 		const algorithm: EcKeyImportParams = {
