@@ -6,6 +6,8 @@
 	"scripts": {
 		"start": "bun run src/index.ts",
 		"dev": "bun --hot run src/index.ts",
+		"start-dev-tee": "phala simulator start",
+		"stop-dev-tee": "phala simulator stop",
 		"test": "bun test ./src/**/*.test.ts",
 		"fmt": "bunx biome format --write .",
 		"knip": "knip"
@@ -15,6 +17,7 @@
 		"@types/bun": "latest",
 		"@types/node": "^22.15.21",
 		"knip": "^5.57.2",
+		"phala": "^1.0.15",
 		"ts-unused-exports": "^11.0.1",
 		"typescript": "^5.8.3"
 	},
