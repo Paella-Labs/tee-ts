@@ -9,19 +9,14 @@ import { env } from "./config";
  * - Ensures same TEE instance always produces same ECDH key pair
  * - Provides cryptographic binding between TEE identity and encryption keys
  *
- * **Integration with HPKE:**
- * This key pair is used as the TEE's long-term identity for HPKE operations:
- * - **Auth Mode**: TEE → Client (TEE authenticates itself)
- * - **Base Mode**: Client → TEE (no client authentication needed)
- *
  * @returns Promise resolving to CryptoKeyPair containing P-256 ECDH private/public keys
  * @throws {Error} When TEE key derivation fails or key import is invalid
  * @throws {Error} When PKCS#8 format is malformed or unsupported
  */
-export async function deriveEncryptionKey(): Promise<CryptoKeyPair> {
+export async function TEEIdentityKey(): Promise<CryptoKeyPair> {
 	// fetch deterministic key material from Dstack
 	const client = new TappdClient(env.DSTACK_SIMULATOR_ENDPOINT);
-	const key = await client.deriveKey("encryption-identity-key"); // X.509 private key in PEM format
+	const key = await client.deriveKey("TEE-identity"); // X.509 private key in PEM format
 
 	const algorithm: EcKeyImportParams = {
 		name: "ECDH" as const,
@@ -68,7 +63,7 @@ export async function deriveEncryptionKey(): Promise<CryptoKeyPair> {
  *
  * @returns Promise resolving to CryptoKeyPair for development/testing use
  */
-export async function deriveDevEncryptionKey(): Promise<CryptoKeyPair> {
+export async function devIdentityKey(): Promise<CryptoKeyPair> {
 	return await crypto.subtle.generateKey(
 		{
 			name: "ECDH" as const,

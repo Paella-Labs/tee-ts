@@ -1,14 +1,14 @@
 import { env } from "./config";
 import { createApp } from "./app";
-import { deriveEncryptionKey } from "./key";
+import { TEEIdentityKey } from "./key";
 import { initializeServices } from "./services";
 
 async function main() {
-	const encryptionKey = await deriveEncryptionKey();
+	const identifyKey = await TEEIdentityKey();
 	console.log("Encryption key derived successfully");
 
 	// Step 2: Initialize services with the encryption key
-	const services = await initializeServices(env, encryptionKey);
+	const services = await initializeServices(env, identifyKey);
 
 	// Step 3: Create the app with the initialized services
 	const app = await createApp(services);
