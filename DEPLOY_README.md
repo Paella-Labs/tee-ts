@@ -23,9 +23,6 @@ ACCESS_SECRET=your_access_secret_here
 # Services
 SENDGRID_API_KEY=your_sendgrid_api_key_here
 
-# Mock TEE configuration
-MOCK_TEE_SECRET=your_mock_tee_secret_here
-
 # SSL Configuration (base64-encoded Cloudflare Origin certificates)
 SSL_CERTIFICATE=your_base64_encoded_certificate
 SSL_CERTIFICATE_KEY=your_base64_encoded_private_key

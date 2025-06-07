@@ -1,10 +1,12 @@
 import {
 	CipherSuite,
-	HkdfSha384,
 	Aes256Gcm,
-	DhkemP384HkdfSha384,
+	DhkemP256HkdfSha256,
+	HkdfSha256,
 } from "@hpke/core";
 import { FF1 } from "@noble/ciphers/ff1";
+import { TappdClient } from "@phala/dstack-sdk";
+import { env } from "config";
 const OTP_RADIX = 10;
 
 /**
@@ -38,11 +40,11 @@ export class EncryptionService {
 
 	private constructor(
 		private readonly suite = new CipherSuite({
-			kem: new DhkemP384HkdfSha384(),
-			kdf: new HkdfSha384(),
+			kem: new DhkemP256HkdfSha256(),
+			kdf: new HkdfSha256(),
 			aead: new Aes256Gcm(),
 		}),
-		private TEEInstanceKeyPair: CryptoKeyPair | null = null,
+		private TEEEncryptionKey: CryptoKeyPair | null = null,
 	) {}
 
 	public static getInstance(): EncryptionService {
@@ -52,23 +54,16 @@ export class EncryptionService {
 		return EncryptionService.instance;
 	}
 
-	async init() {
-		this.TEEInstanceKeyPair = await crypto.subtle.generateKey(
-			{
-				name: "ECDH" as const,
-				namedCurve: "P-384" as const,
-			},
-			true,
-			["deriveBits", "deriveKey"],
-		);
+	async init(encryptionKey: CryptoKeyPair) {
+		this.TEEEncryptionKey = encryptionKey;
 	}
 
 	private assertInitialized() {
-		if (!this.TEEInstanceKeyPair) {
+		if (!this.TEEEncryptionKey) {
 			throw new Error("EncryptionService not initialized");
 		}
 		return {
-			TEEEncryptionKey: this.TEEInstanceKeyPair,
+			TEEEncryptionKey: this.TEEEncryptionKey,
 		};
 	}
 
@@ -184,9 +179,8 @@ export class EncryptionService {
 		const encryptionKeyBytes = new Uint8Array(
 			await crypto.subtle.exportKey("raw", encryptionKey),
 		);
-		const f1 = FF1(OTP_RADIX, encryptionKeyBytes, undefined);
-		const encryptedData = f1.encrypt(data);
-		return encryptedData;
+
+		return FF1(OTP_RADIX, encryptionKeyBytes, undefined).encrypt(data);
 	}
 
 	async encryptBase64<T extends Record<string, unknown>>(
@@ -236,11 +230,10 @@ export class EncryptionService {
 		encapsulatedKey: ArrayBuffer,
 	): Promise<T> {
 		const { TEEEncryptionKey } = this.assertInitialized();
-		const recipientContextPromise = this.suite.createRecipientContext({
+		const recipient = await this.suite.createRecipientContext({
 			recipientKey: TEEEncryptionKey.privateKey,
 			enc: encapsulatedKey,
 		});
-		const recipient = await recipientContextPromise;
 		const pt = await recipient.open(ciphertext);
 		return this.deserialize<T>(pt);
 	}

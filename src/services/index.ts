@@ -7,20 +7,14 @@ import { KeyService } from "./key.service";
 import { SendgridEmailService } from "./email.service";
 import { DatadogMetricsService } from "./metrics.service";
 
-interface ServiceContainer {
-	trustedService: TrustedService;
-	encryptionService: EncryptionService;
-	metricsService: DatadogMetricsService;
-}
-
 export async function initializeServices(
 	env: EnvConfig,
+	identityKey: CryptoKeyPair,
 ): Promise<ServiceInstances> {
 	console.log("Initializing services...");
 
-	// Initialize encryption service
 	const encryptionService = EncryptionService.getInstance();
-	await encryptionService.init();
+	await encryptionService.init(identityKey);
 	console.log("Encryption service initialized successfully");
 
 	// Initialize OTP service
@@ -35,7 +29,7 @@ export async function initializeServices(
 	console.log("Email service initialized successfully");
 
 	// Initialize Key service
-	const keyService = new KeyService(env.MOCK_TEE_SECRET);
+	const keyService = new KeyService(identityKey);
 	console.log("Key service initialized successfully");
 
 	// Create the TrustedService
