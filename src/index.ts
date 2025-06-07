@@ -7,10 +7,7 @@ async function main() {
 	const identifyKey = await TEEIdentityKey();
 	console.log("Encryption key derived successfully");
 
-	// Step 2: Initialize services with the encryption key
 	const services = await initializeServices(env, identifyKey);
-
-	// Step 3: Create the app with the initialized services
 	const app = await createApp(services);
 
 	const server = {

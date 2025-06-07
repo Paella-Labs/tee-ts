@@ -179,9 +179,8 @@ export class EncryptionService {
 		const encryptionKeyBytes = new Uint8Array(
 			await crypto.subtle.exportKey("raw", encryptionKey),
 		);
-		const f1 = FF1(OTP_RADIX, encryptionKeyBytes, undefined);
-		const encryptedData = f1.encrypt(data);
-		return encryptedData;
+
+		return FF1(OTP_RADIX, encryptionKeyBytes, undefined).encrypt(data);
 	}
 
 	async encryptBase64<T extends Record<string, unknown>>(
@@ -231,11 +230,10 @@ export class EncryptionService {
 		encapsulatedKey: ArrayBuffer,
 	): Promise<T> {
 		const { TEEEncryptionKey } = this.assertInitialized();
-		const recipientContextPromise = this.suite.createRecipientContext({
+		const recipient = await this.suite.createRecipientContext({
 			recipientKey: TEEEncryptionKey.privateKey,
 			enc: encapsulatedKey,
 		});
-		const recipient = await recipientContextPromise;
 		const pt = await recipient.open(ciphertext);
 		return this.deserialize<T>(pt);
 	}
