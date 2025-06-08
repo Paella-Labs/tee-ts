@@ -1,11 +1,9 @@
 FROM nginx:alpine
 
-# Install essential debugging and SSL tools
+# Install essential tools for SSL and logging
 RUN apk add --no-cache \
     logrotate \
-    curl \
-    openssl \
-    net-tools
+    openssl
 
 # Copy nginx configuration
 COPY nginx.conf /etc/nginx/nginx.conf
