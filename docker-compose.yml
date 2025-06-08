@@ -42,9 +42,10 @@ services:
       test:
         [
           "CMD",
-          "curl",
-          "-f",
-          "--max-time", "5",
+          "wget",
+          "--no-verbose",
+          "--tries=1",
+          "--spider",
           "http://localhost/health",
         ]
       interval: 30s
@@ -52,13 +53,11 @@ services:
       retries: 3
       start_period: 15s
     ports:
-      - "80:80"
       - "443:443"
     environment:
       - SSL_CERTIFICATE=${SSL_CERTIFICATE}
       - SSL_CERTIFICATE_KEY=${SSL_CERTIFICATE_KEY}
-      - NGINX_DEBUG=1
-      - TZ=UTC
+      - SERVER_NAME=${SERVER_NAME:-staging-tee.crossmint.com tee.crossmint.com}
     volumes:
       - /var/run/tappd.sock:/var/run/tappd.sock
     depends_on:
