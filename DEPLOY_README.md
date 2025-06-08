@@ -84,7 +84,7 @@ This record is crucial for Phala's tproxy to route TLS connections properly:
 
 1. Add a TXT record:
    - **Type**: TXT
-   - **Name**: `_tapp-address.<subdomain>` (e.g., `_tapp-address.app`)
+   - **Name**: `_dstack-app-address.<subdomain>` (e.g., `_tapp-address.staging-tee.crossmint.com`)
    - **Content**: `<Your_Phala_CVM_App_ID>:443` (e.g., `3327603e03f5bd1f830812ca4a789277fc31f577:443`)
    - **TTL**: Auto (or 5 minutes during testing)
 
