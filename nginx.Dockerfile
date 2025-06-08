@@ -1,7 +1,13 @@
 FROM nginx:alpine
 
-# Install logrotate
-RUN apk add --no-cache logrotate
+# Install debugging and SSL tools
+RUN apk add --no-cache \
+    logrotate \
+    curl \
+    openssl \
+    netstat-nat \
+    tcpdump \
+    nmap-ncat
 
 # Copy nginx configuration
 COPY nginx.conf /etc/nginx/nginx.conf

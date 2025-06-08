@@ -42,21 +42,23 @@ services:
       test:
         [
           "CMD",
-          "wget",
-          "--no-verbose",
-          "--tries=1",
-          "--spider",
+          "curl",
+          "-f",
+          "--max-time", "5",
           "http://localhost/health",
         ]
       interval: 30s
       timeout: 10s
       retries: 3
-      start_period: 10s
+      start_period: 15s
     ports:
+      - "80:80"
       - "443:443"
     environment:
       - SSL_CERTIFICATE=${SSL_CERTIFICATE}
       - SSL_CERTIFICATE_KEY=${SSL_CERTIFICATE_KEY}
+      - NGINX_DEBUG=1
+      - TZ=UTC
     volumes:
       - /var/run/tappd.sock:/var/run/tappd.sock
     depends_on:
