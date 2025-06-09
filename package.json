@@ -13,8 +13,8 @@
 	"devDependencies": {
 		"@biomejs/biome": "1.9.4",
 		"@types/bun": "latest",
-		"@types/node": "^22.15.21",
-		"knip": "^5.57.2",
+		"@types/node": "^22.15.30",
+		"knip": "^5.60.2",
 		"ts-unused-exports": "^11.0.1",
 		"typescript": "^5.8.3"
 	},
@@ -30,7 +30,7 @@
 		"@solana/web3.js": "^1.98.2",
 		"datadog-metrics": "^0.12.1",
 		"ethereum-cryptography": "^3.2.0",
-		"hono": "^4.7.10",
+		"hono": "^4.7.11",
 		"shamir-secret-sharing": "0.0.4",
 		"winston": "^3.17.0",
 		"zod": "3.24.3"
