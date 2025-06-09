@@ -23,9 +23,6 @@ ACCESS_SECRET=your_access_secret_here
 # Services
 SENDGRID_API_KEY=your_sendgrid_api_key_here
 
-# Mock TEE configuration
-MOCK_TEE_SECRET=your_mock_tee_secret_here
-
 # SSL Configuration (base64-encoded Cloudflare Origin certificates)
 SSL_CERTIFICATE=your_base64_encoded_certificate
 SSL_CERTIFICATE_KEY=your_base64_encoded_private_key
@@ -87,7 +84,7 @@ This record is crucial for Phala's tproxy to route TLS connections properly:
 
 1. Add a TXT record:
    - **Type**: TXT
-   - **Name**: `_tapp-address.<subdomain>` (e.g., `_tapp-address.app`)
+   - **Name**: `_dstack-app-address.<subdomain>` (e.g., `_tapp-address.staging-tee.crossmint.com`)
    - **Content**: `<Your_Phala_CVM_App_ID>:443` (e.g., `3327603e03f5bd1f830812ca4a789277fc31f577:443`)
    - **TTL**: Auto (or 5 minutes during testing)
 

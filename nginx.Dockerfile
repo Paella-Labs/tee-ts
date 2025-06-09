@@ -1,7 +1,9 @@
 FROM nginx:alpine
 
-# Install logrotate
-RUN apk add --no-cache logrotate
+# Install essential tools for SSL and logging
+RUN apk add --no-cache \
+    logrotate \
+    openssl
 
 # Copy nginx configuration
 COPY nginx.conf /etc/nginx/nginx.conf

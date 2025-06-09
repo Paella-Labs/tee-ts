@@ -17,7 +17,7 @@ export class KeyService {
 	private readonly HASH_ALGORITHM = "SHA-256";
 
 	constructor(
-		private readonly keyDerivationSecret: string,
+		private readonly identityKey: CryptoKeyPair,
 		private readonly outputEncoding: BufferEncoding = "base64",
 	) {}
 
@@ -100,7 +100,17 @@ export class KeyService {
 	}
 
 	/**
-	 * Derive a master secret from user and project information
+	 * Derives a deterministic master secret using HKDF from TEE identity key.
+	 *
+	 * **Security Design:**
+	 * - Uses TEE identity key's private key as cryptographic entropy source
+	 * - HKDF ensures domain separation between different signer/auth combinations
+	 * - Deterministic: same inputs always produce same 256-bit master secret
+	 *
+	 * @param signerId - Unique identifier for the signing entity
+	 * @param authId - Unique identifier for the authentication context
+	 * @returns Promise resolving to 32-byte Uint8Array master secret
+	 * @throws {Error} When key derivation or import operations fail
 	 */
 	private async deriveMasterSecret(
 		signerId: string,
@@ -114,9 +124,14 @@ export class KeyService {
 			}),
 		);
 
+		const derivationSecret = await crypto.subtle.exportKey(
+			"pkcs8",
+			this.identityKey.privateKey,
+		);
+
 		const keyMaterial = await crypto.subtle.importKey(
 			"raw",
-			new TextEncoder().encode(this.keyDerivationSecret),
+			derivationSecret,
 			{ name: "HKDF" },
 			false,
 			["deriveBits"],

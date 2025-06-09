@@ -1,8 +1,8 @@
 import {
 	CipherSuite,
-	HkdfSha384,
 	Aes256Gcm,
-	DhkemP384HkdfSha384,
+	DhkemP256HkdfSha256,
+	HkdfSha256,
 } from "@hpke/core";
 import { FF1 } from "@noble/ciphers/ff1";
 const OTP_RADIX = 10;
@@ -38,11 +38,11 @@ export class EncryptionService {
 
 	private constructor(
 		private readonly suite = new CipherSuite({
-			kem: new DhkemP384HkdfSha384(),
-			kdf: new HkdfSha384(),
+			kem: new DhkemP256HkdfSha256(),
+			kdf: new HkdfSha256(),
 			aead: new Aes256Gcm(),
 		}),
-		private TEEInstanceKeyPair: CryptoKeyPair | null = null,
+		private TEEEncryptionKey: CryptoKeyPair | null = null,
 	) {}
 
 	public static getInstance(): EncryptionService {
@@ -52,24 +52,16 @@ export class EncryptionService {
 		return EncryptionService.instance;
 	}
 
-	async init() {
-		this.TEEInstanceKeyPair = await crypto.subtle.generateKey(
-			{
-				name: "ECDH" as const,
-				namedCurve: "P-384" as const,
-			},
-			true,
-			["deriveBits", "deriveKey"],
-		);
+	async init(encryptionKey: CryptoKeyPair) {
+		this.TEEEncryptionKey = encryptionKey;
 	}
 
-	private assertInitialized() {
-		if (!this.TEEInstanceKeyPair) {
+	private getEncryptionKey(): CryptoKeyPair {
+		if (!this.TEEEncryptionKey) {
 			throw new Error("EncryptionService not initialized");
 		}
-		return {
-			TEEEncryptionKey: this.TEEInstanceKeyPair,
-		};
+
+		return this.TEEEncryptionKey;
 	}
 
 	/**
@@ -110,7 +102,7 @@ export class EncryptionService {
 		encapsulatedKey: ArrayBuffer;
 		publicKey: ArrayBuffer;
 	}> {
-		const { TEEEncryptionKey } = this.assertInitialized();
+		const TEEEncryptionKey = this.getEncryptionKey();
 		const serializedPublicKey = await this.suite.kem.serializePublicKey(
 			TEEEncryptionKey.publicKey,
 		);
@@ -166,14 +158,13 @@ export class EncryptionService {
 		data: number[],
 		receiverPublicKeyBase64: string,
 	): Promise<number[]> {
-		const { TEEEncryptionKey } = this.assertInitialized();
 		const receiverPublicKey = this.base64ToArrayBuffer(receiverPublicKeyBase64);
 		const encryptionKey = await crypto.subtle.deriveKey(
 			{
 				name: "ECDH",
 				public: await this.suite.kem.deserializePublicKey(receiverPublicKey),
 			},
-			TEEEncryptionKey.privateKey,
+			this.getEncryptionKey().privateKey,
 			{
 				name: "AES-GCM" as const,
 				length: 256,
@@ -184,9 +175,8 @@ export class EncryptionService {
 		const encryptionKeyBytes = new Uint8Array(
 			await crypto.subtle.exportKey("raw", encryptionKey),
 		);
-		const f1 = FF1(OTP_RADIX, encryptionKeyBytes, undefined);
-		const encryptedData = f1.encrypt(data);
-		return encryptedData;
+
+		return FF1(OTP_RADIX, encryptionKeyBytes, undefined).encrypt(data);
 	}
 
 	async encryptBase64<T extends Record<string, unknown>>(
@@ -235,12 +225,10 @@ export class EncryptionService {
 		ciphertext: ArrayBuffer,
 		encapsulatedKey: ArrayBuffer,
 	): Promise<T> {
-		const { TEEEncryptionKey } = this.assertInitialized();
-		const recipientContextPromise = this.suite.createRecipientContext({
-			recipientKey: TEEEncryptionKey.privateKey,
+		const recipient = await this.suite.createRecipientContext({
+			recipientKey: this.getEncryptionKey().privateKey,
 			enc: encapsulatedKey,
 		});
-		const recipient = await recipientContextPromise;
 		const pt = await recipient.open(ciphertext);
 		return this.deserialize<T>(pt);
 	}
@@ -266,8 +254,7 @@ export class EncryptionService {
 	}
 
 	async getPublicKey() {
-		const { TEEEncryptionKey } = this.assertInitialized();
-		return this.suite.kem.serializePublicKey(TEEEncryptionKey.publicKey);
+		return this.suite.kem.serializePublicKey(this.getEncryptionKey().publicKey);
 	}
 
 	private arrayBufferToBase64(buffer: ArrayBuffer): string {

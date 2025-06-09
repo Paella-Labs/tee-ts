@@ -12,7 +12,6 @@ cp .env.example .env
 
 2. Update `.env` with your credentials:
    - Set `SENDGRID_API_KEY` for email delivery
-   - Configure `MOCK_TEE_SECRET` for key derivation
 
 3. Install dependencies:
 
@@ -20,12 +19,24 @@ cp .env.example .env
 bun install
 ```
 
-## Running the Service
+## Development
+
+Simulate the Phala TEE (requires docker open):
+
+```bash
+bun start-dev-tee
+```
 
 Start the server:
 
 ```bash
-bun start
+bun dev
+```
+
+Spin down the Phala TEE simulation (requires docker open):
+
+```bash
+bun stop-dev-tee
 ```
 
 The service will be available at http://localhost:3000 (or your configured PORT).
@@ -71,10 +82,6 @@ ACCESS_SECRET=your_access_secret_here
 
 # Services
 SENDGRID_API_KEY=your_sendgrid_api_key_here
-
-# Mock TEE configuration
-MOCK_TEE_SECRET=your_mock_tee_secret_here
-```
 
 ### Building and Running with Docker
 
