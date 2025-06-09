@@ -19,12 +19,24 @@ cp .env.example .env
 bun install
 ```
 
-## Running the Service
+## Development
+
+Simulate the Phala TEE (requires docker open):
+
+```bash
+bun start-dev-tee
+```
 
 Start the server:
 
 ```bash
-bun start
+bun dev
+```
+
+Spin down the Phala TEE simulation (requires docker open):
+
+```bash
+bun stop-dev-tee
 ```
 
 The service will be available at http://localhost:3000 (or your configured PORT).
