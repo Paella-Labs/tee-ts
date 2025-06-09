@@ -23,7 +23,7 @@ export const ENVSchema = z.object({
 		.string()
 		.default("true")
 		.transform((val) => val === "true"),
-	DSTACK_SIMULATOR_ENDPOINT: z.string().optional(),
+	DSTACK_SIMULATOR_ENDPOINT: z.string().optional(), // Should be populated for development only, value: "http://localhost:8090"
 });
 
 export type EnvConfig = z.infer<typeof ENVSchema>;
