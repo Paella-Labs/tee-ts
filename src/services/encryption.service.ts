@@ -5,8 +5,6 @@ import {
 	HkdfSha256,
 } from "@hpke/core";
 import { FF1 } from "@noble/ciphers/ff1";
-import { TappdClient } from "@phala/dstack-sdk";
-import { env } from "config";
 const OTP_RADIX = 10;
 
 /**
@@ -58,13 +56,12 @@ export class EncryptionService {
 		this.TEEEncryptionKey = encryptionKey;
 	}
 
-	private assertInitialized() {
+	private getEncryptionKey(): CryptoKeyPair {
 		if (!this.TEEEncryptionKey) {
 			throw new Error("EncryptionService not initialized");
 		}
-		return {
-			TEEEncryptionKey: this.TEEEncryptionKey,
-		};
+
+		return this.TEEEncryptionKey;
 	}
 
 	/**
@@ -105,7 +102,7 @@ export class EncryptionService {
 		encapsulatedKey: ArrayBuffer;
 		publicKey: ArrayBuffer;
 	}> {
-		const { TEEEncryptionKey } = this.assertInitialized();
+		const TEEEncryptionKey = this.getEncryptionKey();
 		const serializedPublicKey = await this.suite.kem.serializePublicKey(
 			TEEEncryptionKey.publicKey,
 		);
@@ -161,14 +158,13 @@ export class EncryptionService {
 		data: number[],
 		receiverPublicKeyBase64: string,
 	): Promise<number[]> {
-		const { TEEEncryptionKey } = this.assertInitialized();
 		const receiverPublicKey = this.base64ToArrayBuffer(receiverPublicKeyBase64);
 		const encryptionKey = await crypto.subtle.deriveKey(
 			{
 				name: "ECDH",
 				public: await this.suite.kem.deserializePublicKey(receiverPublicKey),
 			},
-			TEEEncryptionKey.privateKey,
+			this.getEncryptionKey().privateKey,
 			{
 				name: "AES-GCM" as const,
 				length: 256,
@@ -229,9 +225,8 @@ export class EncryptionService {
 		ciphertext: ArrayBuffer,
 		encapsulatedKey: ArrayBuffer,
 	): Promise<T> {
-		const { TEEEncryptionKey } = this.assertInitialized();
 		const recipient = await this.suite.createRecipientContext({
-			recipientKey: TEEEncryptionKey.privateKey,
+			recipientKey: this.getEncryptionKey().privateKey,
 			enc: encapsulatedKey,
 		});
 		const pt = await recipient.open(ciphertext);
@@ -259,8 +254,7 @@ export class EncryptionService {
 	}
 
 	async getPublicKey() {
-		const { TEEEncryptionKey } = this.assertInitialized();
-		return this.suite.kem.serializePublicKey(TEEEncryptionKey.publicKey);
+		return this.suite.kem.serializePublicKey(this.getEncryptionKey().publicKey);
 	}
 
 	private arrayBufferToBase64(buffer: ArrayBuffer): string {

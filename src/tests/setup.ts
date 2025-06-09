@@ -9,4 +9,3 @@ process.env.DD_ENV = "test";
 process.env.DD_VERSION = "test";
 process.env.DATADOG_API_KEY = "test-datadog-api-key";
 process.env.DATADOG_METRICS_ENABLED = "false"; // Disable metrics during testing
-process.env.DSTACK_SIMULATOR_ENDPOINT = "http://localhost:8090";

@@ -1,8 +1,16 @@
 import { TappdClient } from "@phala/dstack-sdk";
 import { env } from "./config";
 
+const ALGORITHM: EcKeyImportParams = {
+	name: "ECDH" as const,
+	namedCurve: "P-256" as const, // secp256r1 - matches TEE hardware curve
+};
+const PERMISSIONS: KeyUsage[] = ["deriveBits", "deriveKey"]; // Required for ECDH operations
+const EXTRACTABLE = true;
+const TEE_IDENTITY_DERIVATION_PATH = "TEE-identity";
+
 /**
- * Derives a deterministic P-256 ECDH key pair from the TEE's hardware-backed key.
+ * Derives a deterministic P-256 ECDH key pair from Phala's KMS
  *
  * **Security Design:**
  * - Uses TEE (Trusted Execution Environment) hardware attestation as root of trust
@@ -16,19 +24,14 @@ import { env } from "./config";
 export async function TEEIdentityKey(): Promise<CryptoKeyPair> {
 	// fetch deterministic key material from Dstack
 	const client = new TappdClient(env.DSTACK_SIMULATOR_ENDPOINT);
-	const key = await client.deriveKey("TEE-identity"); // X.509 private key in PEM format
-
-	const algorithm: EcKeyImportParams = {
-		name: "ECDH" as const,
-		namedCurve: "P-256" as const, // secp256r1 - matches TEE hardware curve
-	};
+	const key = await client.deriveKey(TEE_IDENTITY_DERIVATION_PATH); // X.509 private key in PEM format
 
 	const privateKey = await crypto.subtle.importKey(
 		"pkcs8", // PKCS#8 DER format (standard for X.509 private keys)
 		key.asUint8Array(),
-		algorithm,
-		true, // extractable: true (needed for JWK export to derive public key)
-		["deriveBits", "deriveKey"], // Required for ECDH operations
+		ALGORITHM,
+		EXTRACTABLE,
+		PERMISSIONS,
 	);
 
 	// Export private key as JWK to extract public key coordinates
@@ -46,7 +49,7 @@ export async function TEEIdentityKey(): Promise<CryptoKeyPair> {
 			y: privateKeyJWK.y, // Public key Y coordinate (base64url)
 			ext: true, // Extractable for serialization
 		},
-		algorithm,
+		ALGORITHM,
 		true, // extractable: true (needed for HPKE serialization)
 		[], // No key operations (public keys don't perform crypto directly)
 	);
@@ -64,12 +67,5 @@ export async function TEEIdentityKey(): Promise<CryptoKeyPair> {
  * @returns Promise resolving to CryptoKeyPair for development/testing use
  */
 export async function devIdentityKey(): Promise<CryptoKeyPair> {
-	return await crypto.subtle.generateKey(
-		{
-			name: "ECDH" as const,
-			namedCurve: "P-256" as const, // Match production curve
-		},
-		true,
-		["deriveBits", "deriveKey"],
-	);
+	return await crypto.subtle.generateKey(ALGORITHM, EXTRACTABLE, PERMISSIONS);
 }

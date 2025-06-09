@@ -17,22 +17,18 @@ export async function initializeServices(
 	await encryptionService.init(identityKey);
 	console.log("Encryption service initialized successfully");
 
-	// Initialize OTP service
 	const otpService = InMemoryOTPService.getInstance();
 	console.log("OTP service initialized successfully");
 
-	// Initialize Email service
 	const emailService = new SendgridEmailService(
 		env.SENDGRID_API_KEY,
 		env.SENDGRID_EMAIL_TEMPLATE_ID,
 	);
 	console.log("Email service initialized successfully");
 
-	// Initialize Key service
 	const keyService = new KeyService(identityKey);
 	console.log("Key service initialized successfully");
 
-	// Create the TrustedService
 	const trustedService = new TrustedService(
 		otpService,
 		emailService,
@@ -40,11 +36,9 @@ export async function initializeServices(
 		encryptionService,
 	);
 
-	// Initialize Metrics service
 	const metricsService = DatadogMetricsService.getInstance(env);
 	console.log("Metrics service initialized successfully");
 
-	// Return all services in a container
 	return {
 		trustedService,
 		encryptionService,
