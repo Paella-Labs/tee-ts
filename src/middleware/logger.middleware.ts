@@ -32,6 +32,26 @@ export const requestLogger = (): MiddlewareHandler => {
 			// biome-ignore lint/suspicious/noExplicitAny:
 		} catch (error: any) {
 			const durationMs = Date.now() - startTime;
+
+			if (error instanceof Response) {
+				const statusCode = error.status;
+				const logLevel =
+					statusCode >= 500 ? "error" : statusCode >= 400 ? "warn" : "info";
+
+				logger[logLevel](
+					`<-- ${method} ${requestUrl} - ${statusCode} (${durationMs}ms)`,
+					{
+						http: {
+							method: method,
+							url: requestUrl,
+							status_code: statusCode,
+							duration_ms: durationMs,
+						},
+					},
+				);
+				throw error;
+			}
+
 			logger.error(
 				`<-- ${method} ${requestUrl} - Unhandled Error after ${durationMs}ms`,
 				{

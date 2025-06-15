@@ -1,7 +1,22 @@
 import * as metrics from "datadog-metrics";
 import type { EnvConfig } from "../config";
 
-export class DatadogMetricsService {
+export interface MetricsService {
+	gauge(name: string, value: number, tags?: string[]): void;
+	distribution(name: string, value: number, tags?: string[]): void;
+	histogram(name: string, value: number, tags?: string[]): void;
+	increment(name: string, value?: number, tags?: string[]): void;
+
+	/**
+	 * Flush any buffered metrics (optional, most implementations auto-flush)
+	 */
+	flush?(): Promise<void>;
+}
+
+/**
+ * Datadog implementation of metrics service
+ */
+export class DatadogMetricsService implements MetricsService {
 	private static instance: DatadogMetricsService | null = null;
 	private readonly sendMetrics: boolean;
 	private static isInitialized = false;

@@ -2,13 +2,13 @@ import type { EnvConfig } from "config";
 import type { Context } from "hono";
 import type { EncryptionService } from "./services/encryption.service";
 import type { TrustedService } from "services/trusted.service";
-import type { DatadogMetricsService } from "./services/metrics.service";
+import type { MetricsService } from "./services/metrics.service";
 import type { Logger } from "winston";
 
 export interface ServiceInstances {
 	trustedService: TrustedService;
 	encryptionService: EncryptionService;
-	metricsService: DatadogMetricsService;
+	metricsService: MetricsService;
 }
 
 export type AppEnv = {
