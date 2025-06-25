@@ -1,4 +1,3 @@
-
 import { Keypair } from "@solana/web3.js";
 import type { KeyType } from "schemas";
 import { secp256k1 } from "ethereum-cryptography/secp256k1.js";
