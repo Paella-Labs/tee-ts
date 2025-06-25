@@ -56,21 +56,23 @@ export class TrustedService {
 	}
 
 	/**
-	 * Verify OTP and generate key shares
+	 * Verify OTP and generate encrypted master key
 	 */
 	public async completeOnboarding(
 		deviceId: string,
 		otp: string,
+		senderPublicKey: string,
 	): Promise<{
-		device: string;
-		auth: string;
-		deviceKeyShareHash: string;
+		encryptedMasterKey: string;
+		encryptedKeySha256Hash: string;
 		signerId: string;
 	}> {
 		const request = this.otpService.verifyOTP(deviceId, otp);
-		const keyMaterial = await this.keyService.generateAndSplitKey(
+		const keyMaterial = await this.keyService.generateAndEncryptMasterKey(
 			request.signerId,
 			request.authId,
+			senderPublicKey,
+			this.encryptionService,
 		);
 		return { ...keyMaterial, signerId: request.signerId };
 	}
