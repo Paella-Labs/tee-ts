@@ -1,4 +1,4 @@
-import { split } from "shamir-secret-sharing";
+
 import { Keypair } from "@solana/web3.js";
 import type { KeyType } from "schemas";
 import { secp256k1 } from "ethereum-cryptography/secp256k1.js";
@@ -71,31 +71,34 @@ export class KeyService {
 	}
 
 	/**
-	 * Generate and split a key into device and auth shares
+	 * Generate and encrypt master key with sender's public key
 	 */
-	public async generateAndSplitKey(
+	public async generateAndEncryptMasterKey(
 		signerId: string,
 		authId: string,
+		senderPublicKey: string,
+		encryptionService: any,
 	): Promise<{
-		device: string;
-		auth: string;
-		deviceKeyShareHash: string;
+		encryptedMasterKey: string;
+		encryptedKeySha256Hash: string;
 	}> {
 		const masterSecret = await this.deriveMasterSecret(signerId, authId);
 
-		const [device, auth] = await split(masterSecret, 2, 2);
-		if (device == null || auth == null) {
-			throw new Error("shamir secret split failed");
-		}
+		const encryptedMasterKey = await encryptionService.encryptBase64(
+			{ masterKey: Buffer.from(masterSecret).toString(this.outputEncoding) },
+			senderPublicKey,
+		);
 
-		const deviceKeyShareHash = Buffer.from(
-			await crypto.subtle.digest(this.HASH_ALGORITHM, device),
+		const encryptedKeySha256Hash = Buffer.from(
+			await crypto.subtle.digest(
+				this.HASH_ALGORITHM,
+				Buffer.from(encryptedMasterKey.ciphertext, "base64"),
+			),
 		).toString(this.outputEncoding);
 
 		return {
-			device: Buffer.from(device).toString(this.outputEncoding),
-			auth: Buffer.from(auth).toString(this.outputEncoding),
-			deviceKeyShareHash,
+			encryptedMasterKey: encryptedMasterKey.ciphertext,
+			encryptedKeySha256Hash,
 		};
 	}
 

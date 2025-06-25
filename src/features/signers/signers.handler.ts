@@ -84,20 +84,12 @@ export const completeOnboardingHandler = async (c: AppContext) => {
 		onboardingAuthentication: { otp },
 	} = decryptedBody;
 
-	const { device, auth, deviceKeyShareHash, signerId } =
-		await services.trustedService.completeOnboarding(deviceId, otp);
+	const { encryptedMasterKey, encryptedKeySha256Hash, signerId } =
+		await services.trustedService.completeOnboarding(deviceId, otp, senderPublicKey);
 
-	const encryptedResponse = await services.encryptionService.encryptBase64(
-		{
-			deviceKeyShare: device,
-			signerId,
-		},
-		senderPublicKey,
-	);
 	return c.json({
-		...encryptedResponse,
-		authKeyShare: auth,
-		deviceKeyShareHash,
+		encryptedMasterKey,
+		encryptedKeySha256Hash,
 		deviceId,
 	});
 };
