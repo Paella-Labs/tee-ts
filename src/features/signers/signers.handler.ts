@@ -85,7 +85,11 @@ export const completeOnboardingHandler = async (c: AppContext) => {
 	} = decryptedBody;
 
 	const { encryptedMasterKey, encryptedKeySha256Hash, signerId } =
-		await services.trustedService.completeOnboarding(deviceId, otp, senderPublicKey);
+		await services.trustedService.completeOnboarding(
+			deviceId,
+			otp,
+			senderPublicKey,
+		);
 
 	return c.json({
 		encryptedMasterKey,
