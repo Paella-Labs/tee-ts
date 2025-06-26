@@ -3,16 +3,16 @@ import { ECDH_KEY_SPEC } from "./lib/encryption/encryption-consts";
 import type { KeyPairProvider } from "./lib/key-management/provider";
 
 export class TeeKeyService implements KeyPairProvider {
-  private TEEEncryptionKey: CryptoKeyPair | null = null;
+	private TEEEncryptionKey: CryptoKeyPair | null = null;
 
-  async getKeyPair(): Promise<CryptoKeyPair> {
-    if (!this.TEEEncryptionKey) {
-      this.TEEEncryptionKey = await crypto.subtle.generateKey(
-        ECDH_KEY_SPEC,
-        true,
-        ["deriveKey", "deriveBits"]
-      );
-    }
-    return this.TEEEncryptionKey;
-  }
+	async getKeyPair(): Promise<CryptoKeyPair> {
+		if (!this.TEEEncryptionKey) {
+			this.TEEEncryptionKey = await crypto.subtle.generateKey(
+				ECDH_KEY_SPEC,
+				true,
+				["deriveKey", "deriveBits"],
+			);
+		}
+		return this.TEEEncryptionKey;
+	}
 }

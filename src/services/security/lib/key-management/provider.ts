@@ -1,11 +1,11 @@
 export interface KeyPairProvider {
-  getKeyPair(): Promise<CryptoKeyPair>;
+	getKeyPair(): Promise<CryptoKeyPair>;
 }
 
 export interface PublicKeyProvider {
-  getPublicKey(): Promise<CryptoKey>;
+	getPublicKey(): Promise<CryptoKey>;
 }
 
 export interface SymmetricKeyProvider {
-  getSymmetricKey(): Promise<CryptoKey>;
+	getSymmetricKey(): Promise<CryptoKey>;
 }

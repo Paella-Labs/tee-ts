@@ -1,8 +1,8 @@
 import {
-  CipherSuite,
-  Aes256Gcm,
-  DhkemP256HkdfSha256,
-  HkdfSha256,
+	CipherSuite,
+	Aes256Gcm,
+	DhkemP256HkdfSha256,
+	HkdfSha256,
 } from "@hpke/core";
 import { decodeBytes } from "./lib/utils";
 import type { KeyPairProvider } from "./lib/key-management/provider";
@@ -35,72 +35,72 @@ import { AsymmetricEncryptionHandler } from "./lib/encryption/asymmetric/handler
  * 3. Hardware attestation provides root of trust for TEE's public key
  */
 export class AsymmetricEncryptionService {
-  private static instance: AsymmetricEncryptionService | null = null;
+	private static instance: AsymmetricEncryptionService | null = null;
 
-  private constructor(
-    private readonly keyPairProvider: KeyPairProvider,
-    private readonly suite: CipherSuite = new CipherSuite({
-      kem: new DhkemP256HkdfSha256(),
-      kdf: new HkdfSha256(),
-      aead: new Aes256Gcm(),
-    })
-  ) {}
+	private constructor(
+		private readonly keyPairProvider: KeyPairProvider,
+		private readonly suite: CipherSuite = new CipherSuite({
+			kem: new DhkemP256HkdfSha256(),
+			kdf: new HkdfSha256(),
+			aead: new Aes256Gcm(),
+		}),
+	) {}
 
-  public static getInstance(
-    keyPairProvider: KeyPairProvider
-  ): AsymmetricEncryptionService {
-    if (!AsymmetricEncryptionService.instance) {
-      AsymmetricEncryptionService.instance = new AsymmetricEncryptionService(
-        keyPairProvider
-      );
-    }
-    return AsymmetricEncryptionService.instance;
-  }
+	public static getInstance(
+		keyPairProvider: KeyPairProvider,
+	): AsymmetricEncryptionService {
+		if (!AsymmetricEncryptionService.instance) {
+			AsymmetricEncryptionService.instance = new AsymmetricEncryptionService(
+				keyPairProvider,
+			);
+		}
+		return AsymmetricEncryptionService.instance;
+	}
 
-  /**
-   * Decrypts messages received FROM clients using HPKE Base mode.
-   *
-   * **Authentication Strategy:**
-   * - Uses Base mode (no cryptographic sender verification at HPKE layer)
-   * - Client authentication is handled at application layer via OTP verification
-   * - Focuses on confidentiality rather than sender authenticity
-   * - Complements client-side Base mode encryption pattern
-   *
-   * **Client-Side Encryption:**
-   * Clients use Base mode encryption when sending to TEE:
-   * ```typescript
-   * await suite.createSenderContext({
-   *   recipientPublicKey: teePublicKey // No senderKey = Base mode
-   * })
-   * ```
-   *
-   * @param ciphertext - Encrypted message data from client
-   * @param encapsulatedKey - HPKE encapsulated key from client's encryption
-   * @returns Promise resolving to decrypted data object
-   * @throws {Error} When encryption service is not initialized
-   * @throws {Error} When decryption operation fails (invalid ciphertext/key)
-   */
-  async decrypt<T extends Record<string, unknown>>(
-    ciphertext: ArrayBuffer,
-    encapsulatedKey: ArrayBuffer
-  ): Promise<T> {
-    const teeKeyPair = await this.keyPairProvider.getKeyPair();
-    const handler = new AsymmetricEncryptionHandler(this.suite);
-    return handler.decrypt(ciphertext, encapsulatedKey, teeKeyPair);
-  }
+	/**
+	 * Decrypts messages received FROM clients using HPKE Base mode.
+	 *
+	 * **Authentication Strategy:**
+	 * - Uses Base mode (no cryptographic sender verification at HPKE layer)
+	 * - Client authentication is handled at application layer via OTP verification
+	 * - Focuses on confidentiality rather than sender authenticity
+	 * - Complements client-side Base mode encryption pattern
+	 *
+	 * **Client-Side Encryption:**
+	 * Clients use Base mode encryption when sending to TEE:
+	 * ```typescript
+	 * await suite.createSenderContext({
+	 *   recipientPublicKey: teePublicKey // No senderKey = Base mode
+	 * })
+	 * ```
+	 *
+	 * @param ciphertext - Encrypted message data from client
+	 * @param encapsulatedKey - HPKE encapsulated key from client's encryption
+	 * @returns Promise resolving to decrypted data object
+	 * @throws {Error} When encryption service is not initialized
+	 * @throws {Error} When decryption operation fails (invalid ciphertext/key)
+	 */
+	async decrypt<T extends Record<string, unknown>>(
+		ciphertext: ArrayBuffer,
+		encapsulatedKey: ArrayBuffer,
+	): Promise<T> {
+		const teeKeyPair = await this.keyPairProvider.getKeyPair();
+		const handler = new AsymmetricEncryptionHandler(this.suite);
+		return handler.decrypt(ciphertext, encapsulatedKey, teeKeyPair);
+	}
 
-  async decryptBase64<T extends Record<string, unknown>>(
-    ciphertext: string,
-    encapsulatedKey: string
-  ) {
-    return this.decrypt<T>(
-      decodeBytes(ciphertext, "base64").buffer as ArrayBuffer,
-      decodeBytes(encapsulatedKey, "base64").buffer as ArrayBuffer
-    );
-  }
+	async decryptBase64<T extends Record<string, unknown>>(
+		ciphertext: string,
+		encapsulatedKey: string,
+	) {
+		return this.decrypt<T>(
+			decodeBytes(ciphertext, "base64").buffer as ArrayBuffer,
+			decodeBytes(encapsulatedKey, "base64").buffer as ArrayBuffer,
+		);
+	}
 
-  async getPublicKey(): Promise<ArrayBuffer> {
-    const teeKey = await this.keyPairProvider.getKeyPair();
-    return this.suite.kem.serializePublicKey(teeKey.publicKey);
-  }
+	async getPublicKey(): Promise<ArrayBuffer> {
+		const teeKey = await this.keyPairProvider.getKeyPair();
+		return this.suite.kem.serializePublicKey(teeKey.publicKey);
+	}
 }
