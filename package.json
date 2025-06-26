@@ -6,8 +6,8 @@
 	"scripts": {
 		"start": "bun run src/index.ts",
 		"dev": "bun --hot run src/index.ts",
-		"start-dev-tee": "phala simulator start",
-		"stop-dev-tee": "phala simulator stop",
+		"start-dev-tee": "bunx phala simulator start",
+		"stop-dev-tee": "bunx phala simulator stop",
 		"test": "bun test ./src/**/*.test.ts",
 		"fmt": "bunx biome format --write .",
 		"knip": "knip"
