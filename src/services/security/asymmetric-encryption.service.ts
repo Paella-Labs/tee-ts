@@ -34,8 +34,8 @@ import { AsymmetricEncryptionHandler } from "./lib/encryption/asymmetric/handler
  * 2. TEE responses are cryptographically authenticated and verifiable
  * 3. Hardware attestation provides root of trust for TEE's public key
  */
-export class EncryptionService {
-  private static instance: EncryptionService | null = null;
+export class AsymmetricEncryptionService {
+  private static instance: AsymmetricEncryptionService | null = null;
 
   private constructor(
     private readonly keyPairProvider: KeyPairProvider,
@@ -48,11 +48,13 @@ export class EncryptionService {
 
   public static getInstance(
     keyPairProvider: KeyPairProvider
-  ): EncryptionService {
-    if (!EncryptionService.instance) {
-      EncryptionService.instance = new EncryptionService(keyPairProvider);
+  ): AsymmetricEncryptionService {
+    if (!AsymmetricEncryptionService.instance) {
+      AsymmetricEncryptionService.instance = new AsymmetricEncryptionService(
+        keyPairProvider
+      );
     }
-    return EncryptionService.instance;
+    return AsymmetricEncryptionService.instance;
   }
 
   /**

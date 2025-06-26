@@ -1,15 +1,15 @@
 import type { EnvConfig } from "../config";
 import type { ServiceInstances } from "../types";
-import { EncryptionService } from "./encryption/encryption.service";
-import { TrustedService } from "./trusted.service";
-import { InMemoryOTPService } from "./otp/otp.service";
-import { KeyService } from "./keys/key.service";
-import { SendgridEmailService } from "./email/email.service";
-import { DatadogMetricsService } from "./metrics/metrics.service";
-import { TeeKeyService } from "./keys/tee-key.service";
-import { SymmetricEncryptionService } from "./encryption/symmetric-encryption.service";
-import { FPEService } from "./encryption/fpe.service";
-import { KeySerializer } from "./encryption/lib/key-management/key-serializer";
+import { AsymmetricEncryptionService } from "./security/asymmetric-encryption.service";
+import { TrustedService } from "./security/trusted.service";
+import { InMemoryOTPService } from "./security/otp/otp.service";
+import { KeyService } from "./security/key.service";
+import { SendgridEmailService } from "./communication/email.service";
+import { DatadogMetricsService } from "./metrics.service";
+import { TeeKeyService } from "./security/tee-key.service";
+import { SymmetricEncryptionService } from "./security/symmetric-encryption.service";
+import { FPEService } from "./security/fpe.service";
+import { KeySerializer } from "./security/lib/key-management/key-serializer";
 
 export async function initializeServices(
   env: EnvConfig,
@@ -18,7 +18,8 @@ export async function initializeServices(
   console.log("Initializing services...");
 
   const keyPairProvider = new TeeKeyService();
-  const encryptionService = EncryptionService.getInstance(keyPairProvider);
+  const encryptionService =
+    AsymmetricEncryptionService.getInstance(keyPairProvider);
   const fpeService = new FPEService(keyPairProvider);
   const symmetricEncryptionService = new SymmetricEncryptionService(
     keyPairProvider

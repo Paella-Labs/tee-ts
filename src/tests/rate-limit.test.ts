@@ -4,12 +4,16 @@ import { createApp } from "../app";
 import { devIdentityKey } from "../key";
 import { env } from "../config";
 import type { ServiceInstances } from "../types";
-import { EncryptionService } from "../services/encryption/encryption.service";
-import { TrustedService } from "../services/trusted.service";
-import { InMemoryOTPService } from "../services/otp.service";
-import { KeyService } from "../services/keys/key.service";
-import type { EmailService } from "../services/email/email.service";
+import { AsymmetricEncryptionService } from "../services/security/asymmetric-encryption.service";
+import { TrustedService } from "../services/security/trusted.service";
+import { InMemoryOTPService } from "../services/security/otp/otp.service";
+import { KeyService } from "../services/security/key.service";
+import type { EmailService } from "../services/communication/email.service";
 import type { MetricsService } from "../services/metrics.service";
+import { TeeKeyService } from "../services/security/tee-key.service";
+import { SymmetricEncryptionService } from "../services/security/symmetric-encryption.service";
+import { FPEService } from "../services/security/fpe.service";
+import { KeySerializer } from "../services/security/lib/key-management/key-serializer";
 
 // Mock email service that doesn't actually send emails
 class MockEmailService implements EmailService {
@@ -39,8 +43,15 @@ class MockMetricsService implements MetricsService {
 async function initializeServicesWithMockEmail(
   identityKey: CryptoKeyPair
 ): Promise<ServiceInstances> {
-  const encryptionService = EncryptionService.getInstance();
-  await encryptionService.init(identityKey);
+  const keyPairProvider = new TeeKeyService();
+  const encryptionService =
+    AsymmetricEncryptionService.getInstance(keyPairProvider);
+  const fpeService = new FPEService(keyPairProvider);
+  const symmetricEncryptionService = new SymmetricEncryptionService(
+    keyPairProvider
+  );
+  const keySerializer = new KeySerializer();
+
   const otpService = InMemoryOTPService.getInstance();
   const emailService = new MockEmailService();
   const keyService = new KeyService(identityKey);
@@ -48,14 +59,19 @@ async function initializeServicesWithMockEmail(
     otpService,
     emailService,
     keyService,
-    encryptionService
+    encryptionService,
+    fpeService,
+    keySerializer
   );
   const metricsService = new MockMetricsService();
 
   return {
+    teeKeyService: keyPairProvider,
     trustedService,
-    encryptionService,
+    symmetricEncryptionService,
     metricsService,
+    encryptionService,
+    keySerializer,
   };
 }
 

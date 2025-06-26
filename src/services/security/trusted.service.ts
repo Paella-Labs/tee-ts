@@ -1,19 +1,19 @@
-import type { EncryptionService } from "./encryption/encryption.service";
+import type { AsymmetricEncryptionService } from "./asymmetric-encryption.service";
 import type { OTPService } from "./otp/otp.service";
-import type { EmailService } from "./email/email.service";
-import type { KeyService } from "./keys/key.service";
-import type { KeyType } from "../schemas";
+import type { EmailService } from "../communication/email.service";
+import type { KeyService } from "./key.service";
+import type { KeyType } from "../../schemas";
 import type { PublicKeyResponse } from "types";
-import type { FPEService } from "./encryption/fpe.service";
-import type { SymmetricEncryptionService } from "./encryption/symmetric-encryption.service";
-import type { KeySerializer } from "./encryption/lib/key-management/key-serializer";
+import type { FPEService } from "./fpe.service";
+import type { SymmetricEncryptionService } from "./symmetric-encryption.service";
+import type { KeySerializer } from "./lib/key-management/key-serializer";
 
 export class TrustedService {
   constructor(
     private readonly otpService: OTPService,
     private readonly emailService: EmailService,
     private readonly keyService: KeyService,
-    private readonly encryptionService: EncryptionService,
+    private readonly encryptionService: AsymmetricEncryptionService,
     private readonly fpeService: FPEService,
     private readonly keySerializer: KeySerializer
   ) {}

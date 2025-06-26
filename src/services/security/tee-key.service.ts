@@ -1,6 +1,6 @@
-import { ECDH_KEY_SPEC } from "services/encryption/lib/encryption/encryption-consts";
+import { ECDH_KEY_SPEC } from "./lib/encryption/encryption-consts";
 
-import type { KeyPairProvider } from "../encryption/lib/key-management/provider";
+import type { KeyPairProvider } from "./lib/key-management/provider";
 
 export class TeeKeyService implements KeyPairProvider {
   private TEEEncryptionKey: CryptoKeyPair | null = null;

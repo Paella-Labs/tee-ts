@@ -7,7 +7,7 @@ import {
   jest,
   afterEach,
 } from "bun:test";
-import { OnboardingTracker } from "./onboarding-tracker.service";
+import { OnboardingTracker } from "./onboarding.service";
 
 /**
  * TEST SUITE FOR ONBOARDING TRACKER

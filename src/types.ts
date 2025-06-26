@@ -1,12 +1,12 @@
 import type { EnvConfig } from "config";
 import type { Context } from "hono";
-import type { TrustedService } from "./services/trusted.service";
-import type { MetricsService } from "./services/metrics/metrics.service";
+import type { TrustedService } from "./services/security/trusted.service";
+import type { MetricsService } from "./services/metrics.service";
 import type { Logger } from "winston";
-import type { SymmetricEncryptionService } from "services/encryption/symmetric-encryption.service";
-import type { KeySerializer } from "services/encryption/lib/key-management/key-serializer";
-import type { EncryptionService } from "services/encryption/encryption.service";
-import type { TeeKeyService } from "services/keys/tee-key.service";
+import type { SymmetricEncryptionService } from "./services/security/symmetric-encryption.service";
+import type { KeySerializer } from "./services/security/lib/key-management/key-serializer";
+import type { AsymmetricEncryptionService } from "./services/security/asymmetric-encryption.service";
+import type { TeeKeyService } from "./services/security/tee-key.service";
 
 export interface ServiceInstances {
   teeKeyService: TeeKeyService;
@@ -14,7 +14,7 @@ export interface ServiceInstances {
   symmetricEncryptionService: SymmetricEncryptionService;
   metricsService: MetricsService;
   keySerializer: KeySerializer;
-  encryptionService: EncryptionService;
+  encryptionService: AsymmetricEncryptionService;
 }
 
 export type AppEnv = {
