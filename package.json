@@ -35,7 +35,6 @@
 		"datadog-metrics": "^0.12.1",
 		"ethereum-cryptography": "^3.2.0",
 		"hono": "^4.7.10",
-		"shamir-secret-sharing": "0.0.4",
 		"winston": "^3.17.0",
 		"zod": "3.24.3"
 	}

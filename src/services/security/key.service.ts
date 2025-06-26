@@ -1,4 +1,3 @@
-import { split } from "shamir-secret-sharing";
 import { Keypair } from "@solana/web3.js";
 import type { KeyType } from "schemas";
 import { secp256k1 } from "ethereum-cryptography/secp256k1.js";
@@ -16,10 +15,7 @@ const SECP256K1_DERIVATION_PATH = new Uint8Array([
 export class KeyService {
 	private readonly HASH_ALGORITHM = "SHA-256";
 
-	constructor(
-		private readonly identityKey: CryptoKeyPair,
-		private readonly outputEncoding: BufferEncoding = "base64",
-	) {}
+	constructor(private readonly identityKey: CryptoKeyPair) {}
 
 	/**
 	 * Generate a key pair from user and project information
