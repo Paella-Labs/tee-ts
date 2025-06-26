@@ -1,7 +1,7 @@
-import type { EncryptionService } from "./encryption.service";
-import type { OTPService } from "./otp.service";
-import type { EmailService } from "./email.service";
-import type { KeyService } from "./key.service";
+import type { EncryptionService } from "./encryption/encryption.service";
+import type { OTPService } from "./otp/otp.service";
+import type { EmailService } from "./email/email.service";
+import type { KeyService } from "./keys/key.service";
 import type { KeyType } from "../schemas";
 import type { PublicKeyResponse } from "types";
 
