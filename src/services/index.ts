@@ -6,6 +6,10 @@ import { InMemoryOTPService } from "./otp/otp.service";
 import { KeyService } from "./keys/key.service";
 import { SendgridEmailService } from "./email/email.service";
 import { DatadogMetricsService } from "./metrics/metrics.service";
+import { TeeKeyService } from "./keys/tee-key.service";
+import { SymmetricEncryptionService } from "./encryption/symmetric-encryption.service";
+import { FPEService } from "./encryption/fpe.service";
+import { KeySerializer } from "./encryption/lib/key-management/key-serializer";
 
 export async function initializeServices(
   env: EnvConfig,
@@ -13,8 +17,13 @@ export async function initializeServices(
 ): Promise<ServiceInstances> {
   console.log("Initializing services...");
 
-  const encryptionService = EncryptionService.getInstance();
-  await encryptionService.init(identityKey);
+  const keyPairProvider = new TeeKeyService();
+  const encryptionService = EncryptionService.getInstance(keyPairProvider);
+  const fpeService = new FPEService(keyPairProvider);
+  const symmetricEncryptionService = new SymmetricEncryptionService(
+    keyPairProvider
+  );
+  const keySerializer = new KeySerializer();
   console.log("Encryption service initialized successfully");
 
   const otpService = InMemoryOTPService.getInstance();
@@ -33,15 +42,20 @@ export async function initializeServices(
     otpService,
     emailService,
     keyService,
-    encryptionService
+    encryptionService,
+    fpeService,
+    keySerializer
   );
 
   const metricsService = DatadogMetricsService.getInstance(env);
   console.log("Metrics service initialized successfully");
 
   return {
+    teeKeyService: keyPairProvider,
     trustedService,
-    encryptionService,
+    symmetricEncryptionService,
     metricsService,
+    encryptionService,
+    keySerializer,
   };
 }

@@ -1,4 +1,4 @@
-import { OnboardingTracker } from "./security/onboarding-tracker.service";
+import { OnboardingTracker } from "services/security/onboarding-tracker.service";
 
 interface OTPRequest {
   otp: string;

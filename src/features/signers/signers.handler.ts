@@ -53,7 +53,6 @@ export const startOnboardingHandler = async (c: AppContext) => {
 export const completeOnboardingHandler = async (c: AppContext) => {
   const services = c.get("services");
   const encryptedBody = await c.req.json<EncryptedRequest>();
-  // TODO: Extract encryption to a middleware
   if (!isEncryptedRequest(encryptedBody)) {
     throw new HTTPException(400, {
       message: "Invalid request. Encrypted request expected.",
@@ -87,14 +86,14 @@ export const completeOnboardingHandler = async (c: AppContext) => {
   const { masterUserKey, signerId, teepublicKey } =
     await services.trustedService.completeOnboarding(deviceId, otp);
 
-  const encryptedUserKey = await services.encryptionService.encryptBytes(
+  const encryptedUserKey = await services.symmetricEncryptionService.encrypt(
     masterUserKey,
-    senderPublicKey
+    await services.keySerializer.deserializePublicKey(senderPublicKey)
   );
 
   return c.json({
     encryptedUserKey: {
-      bytes: Buffer.from(encryptedUserKey.encryptedData).toString("base64"),
+      bytes: Buffer.from(encryptedUserKey).toString("base64"),
       encoding: "base64",
       encryptionPublicKey: teepublicKey,
     },
@@ -105,7 +104,16 @@ export const completeOnboardingHandler = async (c: AppContext) => {
       encoding: "base64",
       algorithm: "SHA-256",
     },
-    signature: await services.encryptionService.signBytes(masterUserKey),
+    signature: {
+      bytes: "",
+      encoding: "base64",
+      algorithm: "ECDSA",
+      signingPublicKey: await services.keySerializer.serializePublicKey(
+        (
+          await services.teeKeyService.getKeyPair()
+        ).publicKey
+      ),
+    },
     deviceId,
     signerId,
   });

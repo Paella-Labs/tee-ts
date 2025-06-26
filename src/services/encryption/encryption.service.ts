@@ -4,9 +4,9 @@ import {
   DhkemP256HkdfSha256,
   HkdfSha256,
 } from "@hpke/core";
-import { FF1 } from "@noble/ciphers/ff1";
-import { SymmetricEncryptionHandler } from "./symmetric-encryption";
-const OTP_RADIX = 10;
+import { decodeBytes } from "./lib/utils";
+import type { KeyPairProvider } from "./lib/key-management/provider";
+import { AsymmetricEncryptionHandler } from "./lib/encryption/asymmetric/handler";
 
 /**
  * EncryptionService implements HPKE with a specific Auth/Base mode pattern for TEE operations:
@@ -38,210 +38,21 @@ export class EncryptionService {
   private static instance: EncryptionService | null = null;
 
   private constructor(
-    private readonly suite = new CipherSuite({
+    private readonly keyPairProvider: KeyPairProvider,
+    private readonly suite: CipherSuite = new CipherSuite({
       kem: new DhkemP256HkdfSha256(),
       kdf: new HkdfSha256(),
       aead: new Aes256Gcm(),
-    }),
-    private TEEEncryptionKey: CryptoKeyPair | null = null
+    })
   ) {}
 
-  public static getInstance(): EncryptionService {
+  public static getInstance(
+    keyPairProvider: KeyPairProvider
+  ): EncryptionService {
     if (!EncryptionService.instance) {
-      EncryptionService.instance = new EncryptionService();
+      EncryptionService.instance = new EncryptionService(keyPairProvider);
     }
     return EncryptionService.instance;
-  }
-
-  async init(encryptionKey: CryptoKeyPair) {
-    this.TEEEncryptionKey = encryptionKey;
-  }
-
-  private getEncryptionKey(): CryptoKeyPair {
-    if (!this.TEEEncryptionKey) {
-      throw new Error("EncryptionService not initialized");
-    }
-
-    return this.TEEEncryptionKey;
-  }
-
-  /**
-   * Encrypts data for transmission FROM the TEE TO clients using HPKE Auth mode.
-   *
-   * **Authentication Flow:**
-   * - TEE authenticates itself using its static private key
-   * - Clients can cryptographically verify the message came from the genuine TEE (via attestation)
-   * - Prevents impersonation attacks where malicious actors send fake TEE responses
-   *
-   * **Security Properties:**
-   * - **Sender Authentication**: Recipients can verify TEE identity
-   * - **Forward Secrecy**: Compromise of long-term keys doesn't affect past sessions
-   * - **Confidentiality**: Only intended recipient can decrypt the message
-   * - **Integrity**: Any tampering will cause decryption to fail
-   *
-   * **Client-Side Verification:**
-   * The client must use Auth mode decryption with the TEE's attested public key:
-   * ```typescript
-   * await suite.createRecipientContext({
-   *   recipientKey: clientPrivateKey,
-   *   enc: encapsulatedKey,
-   *   senderPublicKey: attestedTeePublicKey // Verifies TEE identity
-   * })
-   * ```
-   *
-   * @param data - Data object to encrypt and send to client
-   * @param receiverPublicKey - Client's public key (from their ephemeral key pair)
-   * @returns Promise resolving to encryption result with ciphertext, encapsulated key, and TEE's public key
-   * @throws {Error} When encryption service is not initialized
-   * @throws {Error} When encryption operation fails
-   */
-  async encrypt<T extends Record<string, unknown>>(
-    data: T,
-    receiverPublicKey: ArrayBuffer
-  ): Promise<{
-    ciphertext: ArrayBuffer;
-    encapsulatedKey: ArrayBuffer;
-    publicKey: ArrayBuffer;
-  }> {
-    const TEEEncryptionKey = this.getEncryptionKey();
-    const serializedPublicKey = await this.suite.kem.serializePublicKey(
-      TEEEncryptionKey.publicKey
-    );
-
-    const senderContextPromise = this.suite.createSenderContext({
-      senderKey: TEEEncryptionKey,
-      recipientPublicKey: await this.suite.kem.deserializePublicKey(
-        receiverPublicKey
-      ),
-    });
-    const senderContext = await senderContextPromise;
-
-    const ciphertext = await senderContext.seal(
-      this.serialize({
-        data,
-        encryptionContext: {
-          senderPublicKey: this.arrayBufferToBase64(serializedPublicKey),
-        },
-      })
-    );
-
-    return {
-      ciphertext,
-      publicKey: await this.suite.kem.serializePublicKey(
-        TEEEncryptionKey.publicKey
-      ),
-      encapsulatedKey: senderContext.enc,
-    };
-  }
-
-  /**
-   * Encrypts OTP codes using Format-Preserving Encryption (FPE) with ECDH-derived keys.
-   *
-   * **Security Design:**
-   * - Uses FF1 algorithm for format-preserving encryption of numeric data
-   * - Derives encryption key via ECDH between TEE's private key and recipient's public key
-   * - Maintains numeric format while providing cryptographic protection
-   * - Ensures OTP codes remain in valid numeric ranges after encryption
-   *
-   * **Key Derivation:**
-   * ```
-   * SharedSecret = ECDH(TEE_PrivateKey, Recipient_PublicKey)
-   * EncryptionKey = AES256(SharedSecret)
-   * EncryptedOTP = FF1(PlaintextOTP, EncryptionKey)
-   * ```
-   *
-   * @param data - Array of numeric digits to encrypt (e.g., [1,2,3,4,5,6] for OTP 123456)
-   * @param receiverPublicKeyBase64 - Recipient's public key in Base64 format
-   * @returns Promise resolving to array of encrypted numeric digits in same format
-   * @throws {Error} When encryption service is not initialized
-   * @throws {Error} When key derivation or encryption fails
-   */
-  async encryptOTP(
-    data: number[],
-    receiverPublicKeyBase64: string
-  ): Promise<number[]> {
-    const receiverPublicKey = this.base64ToArrayBuffer(receiverPublicKeyBase64);
-    const encryptionKey = await crypto.subtle.deriveKey(
-      {
-        name: "ECDH",
-        public: await this.suite.kem.deserializePublicKey(receiverPublicKey),
-      },
-      this.getEncryptionKey().privateKey,
-      {
-        name: "AES-GCM" as const,
-        length: 256,
-      },
-      true,
-      ["wrapKey"]
-    );
-    const encryptionKeyBytes = new Uint8Array(
-      await crypto.subtle.exportKey("raw", encryptionKey)
-    );
-
-    return FF1(OTP_RADIX, encryptionKeyBytes, undefined).encrypt(data);
-  }
-
-  async encryptBytes(data: Uint8Array, receiverPublicKey: string) {
-    const symmetricKey = await crypto.subtle.deriveKey(
-      {
-        name: "ECDH",
-        public: await this.suite.kem.deserializePublicKey(
-          this.base64ToArrayBuffer(receiverPublicKey)
-        ),
-      },
-      this.getEncryptionKey().privateKey,
-      {
-        name: "AES-GCM" as const,
-        length: 256,
-      },
-      true,
-      ["wrapKey", "encrypt", "decrypt"]
-    );
-
-    const symmetricEncryptionHandler = new SymmetricEncryptionHandler(
-      symmetricKey
-    );
-    const encryptedData = await symmetricEncryptionHandler.encrypt(data);
-    return {
-      encryptedData,
-    };
-  }
-
-  async signBytes(data: Uint8Array): Promise<{
-    bytes: string;
-    encoding: "base64";
-    algorithm: "ECDSA";
-    signingPublicKey: string;
-  }> {
-    return {
-      bytes: "",
-      encoding: "base64",
-      algorithm: "ECDSA",
-      signingPublicKey: this.arrayBufferToBase64(
-        await this.suite.kem.serializePublicKey(
-          this.getEncryptionKey().publicKey
-        )
-      ),
-    };
-  }
-
-  async encryptBase64<T extends Record<string, unknown>>(
-    data: T,
-    receiverPublicKey: string
-  ): Promise<{
-    ciphertext: string;
-    encapsulatedKey: string;
-    publicKey: string;
-  }> {
-    const { ciphertext, encapsulatedKey, publicKey } = await this.encrypt(
-      data,
-      this.base64ToArrayBuffer(receiverPublicKey)
-    );
-    return {
-      ciphertext: this.arrayBufferToBase64(ciphertext),
-      encapsulatedKey: this.arrayBufferToBase64(encapsulatedKey),
-      publicKey: this.arrayBufferToBase64(publicKey),
-    };
   }
 
   /**
@@ -271,12 +82,9 @@ export class EncryptionService {
     ciphertext: ArrayBuffer,
     encapsulatedKey: ArrayBuffer
   ): Promise<T> {
-    const recipient = await this.suite.createRecipientContext({
-      recipientKey: this.getEncryptionKey().privateKey,
-      enc: encapsulatedKey,
-    });
-    const pt = await recipient.open(ciphertext);
-    return this.deserialize<T>(pt);
+    const teeKeyPair = await this.keyPairProvider.getKeyPair();
+    const handler = new AsymmetricEncryptionHandler(this.suite);
+    return handler.decrypt(ciphertext, encapsulatedKey, teeKeyPair);
   }
 
   async decryptBase64<T extends Record<string, unknown>>(
@@ -284,31 +92,13 @@ export class EncryptionService {
     encapsulatedKey: string
   ) {
     return this.decrypt<T>(
-      this.base64ToArrayBuffer(ciphertext),
-      this.base64ToArrayBuffer(encapsulatedKey)
+      decodeBytes(ciphertext, "base64").buffer as ArrayBuffer,
+      decodeBytes(encapsulatedKey, "base64").buffer as ArrayBuffer
     );
   }
 
-  private serialize<T extends Record<string, unknown>>(data: T) {
-    return new TextEncoder().encode(
-      JSON.stringify(data)
-    ) as unknown as ArrayBuffer;
-  }
-
-  private deserialize<T extends Record<string, unknown>>(data: ArrayBuffer) {
-    return JSON.parse(new TextDecoder().decode(data)) as T;
-  }
-
-  async getPublicKey() {
-    return this.suite.kem.serializePublicKey(this.getEncryptionKey().publicKey);
-  }
-
-  private arrayBufferToBase64(buffer: ArrayBuffer): string {
-    return btoa(String.fromCharCode(...new Uint8Array(buffer)));
-  }
-
-  private base64ToArrayBuffer(base64: string): ArrayBuffer {
-    const buffer = Buffer.from(base64, "base64");
-    return buffer.buffer;
+  async getPublicKey(): Promise<ArrayBuffer> {
+    const teeKey = await this.keyPairProvider.getKeyPair();
+    return this.suite.kem.serializePublicKey(teeKey.publicKey);
   }
 }
