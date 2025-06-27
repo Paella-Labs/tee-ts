@@ -36,6 +36,7 @@
 		"ethereum-cryptography": "^3.2.0",
 		"hono": "^4.7.10",
 		"winston": "^3.17.0",
-		"zod": "3.24.3"
+		"zod": "3.24.3",
+		"@crossmint/client-signers-cryptography": "0.0.2"
 	}
 }

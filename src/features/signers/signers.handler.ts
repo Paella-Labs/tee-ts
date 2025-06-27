@@ -9,7 +9,7 @@ import {
 } from "../../schemas";
 import type { z } from "zod";
 import { HTTPException } from "hono/http-exception";
-import { PublicKeySerializer } from "lib/primitives/keys";
+import { PublicKeySerializer } from "@crossmint/client-signers-cryptography";
 
 export const derivePublicKeyHandler = async (c: AppContext) => {
 	const services = c.get("services");
