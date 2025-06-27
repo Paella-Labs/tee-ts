@@ -13,6 +13,7 @@
 		"knip": "knip"
 	},
 	"devDependencies": {
+		"@biomejs/biome": "1.9.4",
 		"@types/bun": "latest",
 		"@types/node": "^22.15.21",
 		"knip": "^5.57.2",

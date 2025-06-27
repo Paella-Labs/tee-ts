@@ -62,9 +62,7 @@ export const StartOnboardingRequestSchema = z.object({
 		publicKey: z.string().min(1, { message: "Public key is required" }),
 	}),
 });
-type StartOnboardingRequest = z.infer<
-	typeof StartOnboardingRequestSchema
->;
+type StartOnboardingRequest = z.infer<typeof StartOnboardingRequestSchema>;
 
 export const CompleteOnboardingRequestSchema = z.object({
 	deviceId: z.string().min(1, { message: "Device ID is required" }),
