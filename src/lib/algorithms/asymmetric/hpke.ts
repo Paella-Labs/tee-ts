@@ -1,10 +1,9 @@
-import { encodeBytes, decodeBytes } from "../../utils";
-import { type EncryptionResult, createHpkeSuite } from "../encryption-consts";
+import { encodeBytes, decodeBytes } from "../../primitives";
+import { createHpkeSuite } from "../../constants";
+import type { EncryptionResult, EncryptablePayload } from "../../types";
 import type { CipherSuite } from "@hpke/core";
 
-type EncryptablePayload = Record<string, unknown>;
-
-export class AsymmetricEncryptionHandler {
+export class HPKE {
 	constructor(private readonly hpkeSuite: CipherSuite = createHpkeSuite()) {}
 
 	async encrypt<T extends EncryptablePayload>(
@@ -41,7 +40,7 @@ export class AsymmetricEncryptionHandler {
 				encapsulatedKey: senderContext.enc,
 			};
 		} catch (error) {
-			console.error(`[EncryptionHandler] Encryption failed: ${error}`);
+			console.error(`[HPKE] Encryption failed: ${error}`);
 			throw new Error("Failed to encrypt data");
 		}
 	}
@@ -81,13 +80,13 @@ export class AsymmetricEncryptionHandler {
 			);
 			return this.deserialize<T>(plaintext);
 		} catch (error) {
-			console.error(`[EncryptionHandler] Decryption failed: ${error}`);
+			console.error(`[HPKE] Decryption failed: ${error}`);
 			throw new Error("Failed to decrypt data");
 		}
 	}
 
 	private serialize<T extends EncryptablePayload>(data: T): ArrayBuffer {
-		return new TextEncoder().encode(JSON.stringify(data)).buffer as ArrayBuffer;
+		return new TextEncoder().encode(JSON.stringify(data));
 	}
 
 	private deserialize<T extends EncryptablePayload>(data: ArrayBuffer): T {
@@ -99,7 +98,7 @@ export class AsymmetricEncryptionHandler {
 	}
 
 	private base64ToBuffer(base64: string): ArrayBuffer {
-		return decodeBytes(base64, "base64").buffer as ArrayBuffer;
+		return decodeBytes(base64, "base64").buffer;
 	}
 
 	private bufferOrStringToBuffer(value: string | ArrayBuffer): ArrayBuffer {

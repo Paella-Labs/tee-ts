@@ -4,9 +4,8 @@ import {
 	DhkemP256HkdfSha256,
 	HkdfSha256,
 } from "@hpke/core";
-import { decodeBytes } from "./lib/utils";
-import type { KeyPairProvider } from "./lib/key-management/provider";
-import { AsymmetricEncryptionHandler } from "./lib/encryption/asymmetric/handler";
+import { decodeBytes } from "lib/primitives/encoding";
+import { HPKE, type KeyPairProvider } from "lib";
 
 /**
  * EncryptionService implements HPKE with a specific Auth/Base mode pattern for TEE operations:
@@ -34,10 +33,8 @@ import { AsymmetricEncryptionHandler } from "./lib/encryption/asymmetric/handler
  * 2. TEE responses are cryptographically authenticated and verifiable
  * 3. Hardware attestation provides root of trust for TEE's public key
  */
-export class AsymmetricEncryptionService {
-	private static instance: AsymmetricEncryptionService | null = null;
-
-	private constructor(
+export class HPKEService {
+	constructor(
 		private readonly keyPairProvider: KeyPairProvider,
 		private readonly suite: CipherSuite = new CipherSuite({
 			kem: new DhkemP256HkdfSha256(),
@@ -45,17 +42,6 @@ export class AsymmetricEncryptionService {
 			aead: new Aes256Gcm(),
 		}),
 	) {}
-
-	public static getInstance(
-		keyPairProvider: KeyPairProvider,
-	): AsymmetricEncryptionService {
-		if (!AsymmetricEncryptionService.instance) {
-			AsymmetricEncryptionService.instance = new AsymmetricEncryptionService(
-				keyPairProvider,
-			);
-		}
-		return AsymmetricEncryptionService.instance;
-	}
 
 	/**
 	 * Decrypts messages received FROM clients using HPKE Base mode.
@@ -85,8 +71,7 @@ export class AsymmetricEncryptionService {
 		encapsulatedKey: ArrayBuffer,
 	): Promise<T> {
 		const teeKeyPair = await this.keyPairProvider.getKeyPair();
-		const handler = new AsymmetricEncryptionHandler(this.suite);
-		return handler.decrypt(ciphertext, encapsulatedKey, teeKeyPair);
+		return new HPKE().decrypt(ciphertext, encapsulatedKey, teeKeyPair);
 	}
 
 	async decryptBase64<T extends Record<string, unknown>>(

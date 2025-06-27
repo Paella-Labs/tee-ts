@@ -1,8 +1,9 @@
+import { deriveSymmetricKey } from "../../primitives";
 import type {
 	KeyPairProvider,
 	PublicKeyProvider,
 	SymmetricKeyProvider,
-} from "./provider";
+} from "./interfaces";
 
 export class ECDHKeyProvider implements SymmetricKeyProvider {
 	constructor(
@@ -14,20 +15,6 @@ export class ECDHKeyProvider implements SymmetricKeyProvider {
 		const publicKey = await this.publicKeyProvider.getPublicKey();
 		const keyPair = await this.keyPairProvider.getKeyPair();
 
-		const symmetricKey = await crypto.subtle.deriveKey(
-			{
-				name: "ECDH",
-				public: publicKey,
-			},
-			keyPair.privateKey,
-			{
-				name: "AES-GCM" as const,
-				length: 256,
-			},
-			true,
-			["encrypt", "decrypt"],
-		);
-
-		return symmetricKey;
+		return deriveSymmetricKey(keyPair.privateKey, publicKey);
 	}
 }

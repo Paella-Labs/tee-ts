@@ -1,6 +1,5 @@
-import { FPEHandler } from "./lib/encryption/symmetric/fpe/handler";
-import type { KeyPairProvider } from "./lib/key-management/provider";
-import { ECDHKeyProvider } from "./lib/key-management/ecdh-key-provider";
+import { FPE, type KeyPairProvider } from "lib";
+import { deriveSymmetricKey } from "lib/primitives/keys";
 
 export class FPEService {
 	constructor(private readonly keyPairProvider: KeyPairProvider) {}
@@ -9,7 +8,7 @@ export class FPEService {
 		data: number[],
 		receiverPublicKey: CryptoKey,
 	): Promise<number[]> {
-		const handler = new FPEHandler();
+		const handler = new FPE();
 		const key = await this.deriveEncryptionKey(receiverPublicKey);
 		return await handler.encrypt(data, key);
 	}
@@ -17,9 +16,7 @@ export class FPEService {
 	private async deriveEncryptionKey(
 		receiverPublicKey: CryptoKey,
 	): Promise<CryptoKey> {
-		const keyProvider = new ECDHKeyProvider(this.keyPairProvider, {
-			getPublicKey: async () => receiverPublicKey,
-		});
-		return await keyProvider.getSymmetricKey();
+		const keyPair = await this.keyPairProvider.getKeyPair();
+		return deriveSymmetricKey(keyPair.privateKey, receiverPublicKey);
 	}
 }

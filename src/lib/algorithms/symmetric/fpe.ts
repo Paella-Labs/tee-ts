@@ -1,13 +1,7 @@
 import { FF1 } from "@noble/ciphers/ff1";
-type FPEEncryptionOptions = {
-	radix: number;
-	tweak?: Uint8Array;
-};
+import type { FPEEncryptionOptions } from "../../types";
 
-export class FPEHandler {
-	name = "Format Preserving Encryption Service";
-	log_prefix = "[FPEService]";
-
+export class FPE {
 	constructor(
 		private readonly options: FPEEncryptionOptions = {
 			radix: 10,
@@ -19,7 +13,7 @@ export class FPEHandler {
 		return FF1(this.options.radix, encryptionKey, this.options.tweak);
 	}
 
-	public async encrypt(data: number[], key: CryptoKey): Promise<number[]> {
+	async encrypt(data: number[], key: CryptoKey): Promise<number[]> {
 		const ff1 = await this.getFf1(key);
 		if (data.some((d) => d >= this.options.radix)) {
 			throw new Error("Data contains values greater than the radix");
@@ -27,7 +21,7 @@ export class FPEHandler {
 		return ff1.encrypt(data);
 	}
 
-	public async decrypt(data: number[], key: CryptoKey): Promise<number[]> {
+	async decrypt(data: number[], key: CryptoKey): Promise<number[]> {
 		const ff1 = await this.getFf1(key);
 		if (data.some((d) => d >= this.options.radix)) {
 			throw new Error("Data contains values greater than the radix");
@@ -56,7 +50,9 @@ export class FPEHandler {
 	 * @throws {Error} When AES256 encryption key has not been initialized
 	 * @throws {Error} When key export operation fails
 	 */
-	private async exportSymmetricEncryptionKey(key: CryptoKey) {
+	private async exportSymmetricEncryptionKey(
+		key: CryptoKey,
+	): Promise<Uint8Array> {
 		return new Uint8Array(await crypto.subtle.exportKey("raw", key));
 	}
 }

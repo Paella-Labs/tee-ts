@@ -3,18 +3,16 @@ import type { Context } from "hono";
 import type { TrustedService } from "./services/security/trusted.service";
 import type { MetricsService } from "./services/metrics.service";
 import type { Logger } from "winston";
-import type { SymmetricEncryptionService } from "./services/security/symmetric-encryption.service";
-import type { KeySerializer } from "./services/security/lib/key-management/key-serializer";
-import type { AsymmetricEncryptionService } from "./services/security/asymmetric-encryption.service";
+import type { AesGcmService } from "./services/security/aes-gcm.service";
+import type { HPKEService } from "./services/security/hpke.service";
 import type { TeeKeyService } from "./services/security/tee-key.service";
 
 export interface ServiceInstances {
 	teeKeyService: TeeKeyService;
 	trustedService: TrustedService;
-	symmetricEncryptionService: SymmetricEncryptionService;
+	symmetricEncryptionService: AesGcmService;
 	metricsService: MetricsService;
-	keySerializer: KeySerializer;
-	encryptionService: AsymmetricEncryptionService;
+	encryptionService: HPKEService;
 }
 
 export type AppEnv = {

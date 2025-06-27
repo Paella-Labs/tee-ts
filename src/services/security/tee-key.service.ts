@@ -1,9 +1,17 @@
-import { ECDH_KEY_SPEC } from "./lib/encryption/encryption-consts";
-
-import type { KeyPairProvider } from "./lib/key-management/provider";
+import { ECDH_KEY_SPEC, type KeyPairProvider } from "lib";
 
 export class TeeKeyService implements KeyPairProvider {
+	private static instance: TeeKeyService | null = null;
 	private TEEEncryptionKey: CryptoKeyPair | null = null;
+
+	private constructor() {}
+
+	public static getInstance(): TeeKeyService {
+		if (!TeeKeyService.instance) {
+			TeeKeyService.instance = new TeeKeyService();
+		}
+		return TeeKeyService.instance;
+	}
 
 	async getKeyPair(): Promise<CryptoKeyPair> {
 		if (!this.TEEEncryptionKey) {

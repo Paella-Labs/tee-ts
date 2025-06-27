@@ -1,15 +1,14 @@
 import type { EnvConfig } from "../config";
 import type { ServiceInstances } from "../types";
-import { AsymmetricEncryptionService } from "./security/asymmetric-encryption.service";
+import { HPKEService } from "./security/hpke.service";
 import { TrustedService } from "./security/trusted.service";
 import { InMemoryOTPService } from "./security/otp/otp.service";
 import { KeyService } from "./security/key.service";
 import { SendgridEmailService } from "./communication/email.service";
 import { DatadogMetricsService } from "./metrics.service";
 import { TeeKeyService } from "./security/tee-key.service";
-import { SymmetricEncryptionService } from "./security/symmetric-encryption.service";
+import { AesGcmService } from "./security/aes-gcm.service";
 import { FPEService } from "./security/fpe.service";
-import { KeySerializer } from "./security/lib/key-management/key-serializer";
 
 export async function initializeServices(
 	env: EnvConfig,
@@ -17,14 +16,10 @@ export async function initializeServices(
 ): Promise<ServiceInstances> {
 	console.log("Initializing services...");
 
-	const keyPairProvider = new TeeKeyService();
-	const encryptionService =
-		AsymmetricEncryptionService.getInstance(keyPairProvider);
+	const keyPairProvider = TeeKeyService.getInstance();
+	const encryptionService = new HPKEService(keyPairProvider);
 	const fpeService = new FPEService(keyPairProvider);
-	const symmetricEncryptionService = new SymmetricEncryptionService(
-		keyPairProvider,
-	);
-	const keySerializer = new KeySerializer();
+	const symmetricEncryptionService = new AesGcmService(keyPairProvider);
 	console.log("Encryption service initialized successfully");
 
 	const otpService = InMemoryOTPService.getInstance();
@@ -45,7 +40,6 @@ export async function initializeServices(
 		keyService,
 		encryptionService,
 		fpeService,
-		keySerializer,
 	);
 
 	const metricsService = DatadogMetricsService.getInstance(env);
@@ -57,6 +51,5 @@ export async function initializeServices(
 		symmetricEncryptionService,
 		metricsService,
 		encryptionService,
-		keySerializer,
 	};
 }

@@ -9,6 +9,7 @@ import {
 } from "../../schemas";
 import type { z } from "zod";
 import { HTTPException } from "hono/http-exception";
+import { PublicKeySerializer } from "lib/primitives/keys";
 
 export const derivePublicKeyHandler = async (c: AppContext) => {
 	const services = c.get("services");
@@ -88,7 +89,7 @@ export const completeOnboardingHandler = async (c: AppContext) => {
 
 	const encryptedUserKey = await services.symmetricEncryptionService.encrypt(
 		masterUserKey,
-		await services.keySerializer.deserializePublicKey(senderPublicKey),
+		await PublicKeySerializer.deserialize(senderPublicKey),
 	);
 
 	return c.json({
@@ -108,7 +109,7 @@ export const completeOnboardingHandler = async (c: AppContext) => {
 			bytes: "",
 			encoding: "base64",
 			algorithm: "ECDSA",
-			signingPublicKey: await services.keySerializer.serializePublicKey(
+			signingPublicKey: await PublicKeySerializer.serialize(
 				(await services.teeKeyService.getKeyPair()).publicKey,
 			),
 		},

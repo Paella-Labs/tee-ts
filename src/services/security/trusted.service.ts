@@ -1,21 +1,19 @@
-import type { AsymmetricEncryptionService } from "./asymmetric-encryption.service";
+import type { HPKEService } from "./hpke.service";
 import type { OTPService } from "./otp/otp.service";
 import type { EmailService } from "../communication/email.service";
 import type { KeyService } from "./key.service";
 import type { KeyType } from "../../schemas";
 import type { PublicKeyResponse } from "types";
 import type { FPEService } from "./fpe.service";
-import type { SymmetricEncryptionService } from "./symmetric-encryption.service";
-import type { KeySerializer } from "./lib/key-management/key-serializer";
+import { PublicKeySerializer } from "lib/primitives/keys";
 
 export class TrustedService {
 	constructor(
 		private readonly otpService: OTPService,
 		private readonly emailService: EmailService,
 		private readonly keyService: KeyService,
-		private readonly encryptionService: AsymmetricEncryptionService,
+		private readonly encryptionService: HPKEService,
 		private readonly fpeService: FPEService,
-		private readonly keySerializer: KeySerializer,
 	) {}
 
 	public async derivePublicKey(
@@ -43,14 +41,13 @@ export class TrustedService {
 		}
 
 		let otp = this.otpService.generateOTP(signerId, authId, deviceId);
+		const publicKey = await PublicKeySerializer.deserialize(
+			encryptionContext.publicKey,
+			"base64",
+		);
 
 		otp = (
-			await this.fpeService.encryptOTP(
-				otp.split("").map(Number),
-				await this.keySerializer.deserializePublicKey(
-					encryptionContext.publicKey,
-				),
-			)
+			await this.fpeService.encryptOTP(otp.split("").map(Number), publicKey)
 		).join("");
 
 		await this.emailService.sendOTPEmail(
