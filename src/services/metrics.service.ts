@@ -6,10 +6,6 @@ export interface MetricsService {
 	distribution(name: string, value: number, tags?: string[]): void;
 	histogram(name: string, value: number, tags?: string[]): void;
 	increment(name: string, value?: number, tags?: string[]): void;
-
-	/**
-	 * Flush any buffered metrics (optional, most implementations auto-flush)
-	 */
 	flush?(): Promise<void>;
 }
 

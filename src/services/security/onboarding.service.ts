@@ -72,6 +72,9 @@ export class OnboardingTracker {
 				}),
 				{
 					status: 429,
+					headers: {
+						"Content-Type": "application/json",
+					},
 				},
 			);
 		}

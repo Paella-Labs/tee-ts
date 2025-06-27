@@ -1,4 +1,4 @@
-import { OnboardingTracker } from "./onboarding-tracker.service";
+import { OnboardingTracker } from "../onboarding.service";
 
 interface OTPRequest {
 	otp: string;
@@ -142,6 +142,9 @@ export class InMemoryOTPService implements OTPService {
 				}),
 				{
 					status: 400,
+					headers: {
+						"Content-Type": "application/json",
+					},
 				},
 			);
 		}
@@ -151,6 +154,9 @@ export class InMemoryOTPService implements OTPService {
 			this.pendingRequests.delete(deviceId);
 			throw new Response(JSON.stringify({ error: "OTP has expired" }), {
 				status: 401,
+				headers: {
+					"Content-Type": "application/json",
+				},
 			});
 		}
 
@@ -165,18 +171,22 @@ export class InMemoryOTPService implements OTPService {
 					}),
 					{
 						status: 401,
+						headers: {
+							"Content-Type": "application/json",
+						},
 					},
 				);
 			}
 
 			throw new Response(
 				JSON.stringify({
-					error: `Invalid OTP (${
-						request.failedAttempts
-					}/${SECURITY_CONFIG.MAX_FAILED_ATTEMPTS} attempts)`,
+					error: `Invalid OTP (${request.failedAttempts}/${SECURITY_CONFIG.MAX_FAILED_ATTEMPTS} attempts)`,
 				}),
 				{
 					status: 401,
+					headers: {
+						"Content-Type": "application/json",
+					},
 				},
 			);
 		}

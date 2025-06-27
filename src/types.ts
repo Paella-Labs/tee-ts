@@ -1,14 +1,18 @@
 import type { EnvConfig } from "config";
 import type { Context } from "hono";
-import type { EncryptionService } from "./services/encryption.service";
-import type { TrustedService } from "services/trusted.service";
+import type { TrustedService } from "./services/security/trusted.service";
 import type { MetricsService } from "./services/metrics.service";
 import type { Logger } from "winston";
+import type { AesGcmService } from "./services/security/aes-gcm.service";
+import type { HPKEService } from "./services/security/hpke.service";
+import type { TeeKeyService } from "./services/security/tee-key.service";
 
 export interface ServiceInstances {
+	teeKeyService: TeeKeyService;
 	trustedService: TrustedService;
-	encryptionService: EncryptionService;
+	symmetricEncryptionService: AesGcmService;
 	metricsService: MetricsService;
+	encryptionService: HPKEService;
 }
 
 export type AppEnv = {

@@ -4,12 +4,15 @@ import { createApp } from "../app";
 import { devIdentityKey } from "../key";
 import { env } from "../config";
 import type { ServiceInstances } from "../types";
-import { EncryptionService } from "../services/encryption.service";
-import { TrustedService } from "../services/trusted.service";
-import { InMemoryOTPService } from "../services/otp.service";
-import { KeyService } from "../services/key.service";
-import type { EmailService } from "../services/email.service";
+import { HPKEService } from "../services/security/hpke.service";
+import { TrustedService } from "../services/security/trusted.service";
+import { InMemoryOTPService } from "../services/security/otp/otp.service";
+import { UserSecretService } from "../services/user/user-secret.service";
+import type { EmailService } from "../services/communication/email.service";
 import type { MetricsService } from "../services/metrics.service";
+import { TeeKeyService } from "../services/security/tee-key.service";
+import { AesGcmService } from "../services/security/aes-gcm.service";
+import { FPEService } from "../services/security/fpe.service";
 
 // Mock email service that doesn't actually send emails
 class MockEmailService implements EmailService {
@@ -39,23 +42,29 @@ class MockMetricsService implements MetricsService {
 async function initializeServicesWithMockEmail(
 	identityKey: CryptoKeyPair,
 ): Promise<ServiceInstances> {
-	const encryptionService = EncryptionService.getInstance();
-	await encryptionService.init(identityKey);
+	const keyPairProvider = TeeKeyService.getInstance();
+	const encryptionService = new HPKEService(keyPairProvider);
+	const fpeService = new FPEService(keyPairProvider);
+	const symmetricEncryptionService = new AesGcmService(keyPairProvider);
+
 	const otpService = InMemoryOTPService.getInstance();
 	const emailService = new MockEmailService();
-	const keyService = new KeyService(identityKey);
+	const keyService = new UserSecretService(identityKey);
 	const trustedService = new TrustedService(
 		otpService,
 		emailService,
 		keyService,
 		encryptionService,
+		fpeService,
 	);
 	const metricsService = new MockMetricsService();
 
 	return {
+		teeKeyService: keyPairProvider,
 		trustedService,
-		encryptionService,
+		symmetricEncryptionService,
 		metricsService,
+		encryptionService,
 	};
 }
 

@@ -33,6 +33,16 @@ export const globalErrorHandler: ErrorHandler<AppEnv> = (err, c) => {
 	}
 
 	if (err instanceof Response) {
+		// Ensure the Response has the correct Content-Type header for JSON responses
+		if (!err.headers.get("Content-Type")) {
+			const headers = new Headers(err.headers);
+			headers.set("Content-Type", "application/json");
+			return new Response(err.body, {
+				status: err.status,
+				statusText: err.statusText,
+				headers,
+			});
+		}
 		return err;
 	}
 

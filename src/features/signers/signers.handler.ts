@@ -9,6 +9,8 @@ import {
 } from "../../schemas";
 import type { z } from "zod";
 import { HTTPException } from "hono/http-exception";
+import { PublicKeySerializer } from "@crossmint/client-signers-cryptography";
+const HASH_ALGORITHM = "SHA-256";
 
 export const derivePublicKeyHandler = async (c: AppContext) => {
 	const services = c.get("services");
@@ -53,7 +55,6 @@ export const startOnboardingHandler = async (c: AppContext) => {
 export const completeOnboardingHandler = async (c: AppContext) => {
 	const services = c.get("services");
 	const encryptedBody = await c.req.json<EncryptedRequest>();
-	// TODO: Extract encryption to a middleware
 	if (!isEncryptedRequest(encryptedBody)) {
 		throw new HTTPException(400, {
 			message: "Invalid request. Encrypted request expected.",
@@ -84,20 +85,30 @@ export const completeOnboardingHandler = async (c: AppContext) => {
 		onboardingAuthentication: { otp },
 	} = decryptedBody;
 
-	const { device, auth, deviceKeyShareHash, signerId } =
+	const { masterUserKey, signerId, teepublicKey } =
 		await services.trustedService.completeOnboarding(deviceId, otp);
 
-	const encryptedResponse = await services.encryptionService.encryptBase64(
-		{
-			deviceKeyShare: device,
-			signerId,
-		},
-		senderPublicKey,
-	);
+	const encryptedMasterSecret =
+		await services.symmetricEncryptionService.encrypt(
+			masterUserKey,
+			await PublicKeySerializer.deserialize(senderPublicKey),
+		);
+
 	return c.json({
-		...encryptedResponse,
-		authKeyShare: auth,
-		deviceKeyShareHash,
+		encryptedMasterSecret: {
+			...toBase64(Buffer.from(encryptedMasterSecret).buffer),
+			encryptionPublicKey: teepublicKey,
+		},
+		masterSecretHash: {
+			...toBase64(await crypto.subtle.digest(HASH_ALGORITHM, masterUserKey)),
+			algorithm: HASH_ALGORITHM,
+		},
 		deviceId,
+		signerId,
 	});
 };
+
+const toBase64 = (data: ArrayBuffer) => ({
+	bytes: Buffer.from(data).toString("base64"),
+	encoding: "base64",
+});

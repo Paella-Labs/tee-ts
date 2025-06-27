@@ -8,7 +8,7 @@ import {
 	jest,
 } from "bun:test";
 import { InMemoryOTPService } from "./otp.service";
-import { OnboardingTracker } from "./onboarding-tracker.service";
+import { OnboardingTracker } from "../onboarding.service";
 
 /**
  * SECURITY AUDIT TEST SUITE FOR OTP SERVICE
