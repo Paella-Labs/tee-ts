@@ -5,7 +5,7 @@
 	"private": true,
 	"scripts": {
 		"start": "bun run src/index.ts",
-		"dev": "bun --hot run src/index.ts",
+		"dev": "pnpm run start-dev-tee && bun --hot run src/index.ts",
 		"start-dev-tee": "bunx phala simulator start",
 		"stop-dev-tee": "bunx phala simulator stop",
 		"test": "bun test ./src/**/*.test.ts",
