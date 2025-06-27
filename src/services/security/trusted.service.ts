@@ -1,7 +1,7 @@
 import type { HPKEService } from "./hpke.service";
 import type { OTPService } from "./otp/otp.service";
 import type { EmailService } from "../communication/email.service";
-import type { KeyService } from "./key.service";
+import type { KeyService } from "../user/key.service";
 import type { KeyType } from "../../schemas";
 import type { PublicKeyResponse } from "types";
 import type { FPEService } from "./fpe.service";
@@ -47,7 +47,7 @@ export class TrustedService {
     );
 
     otp = (
-      await this.fpeService.encryptOTP(otp.split("").map(Number), publicKey)
+      await this.fpeService.encrypt(otp.split("").map(Number), publicKey)
     ).join("");
 
     await this.emailService.sendOTPEmail(

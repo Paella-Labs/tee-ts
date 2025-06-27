@@ -13,12 +13,6 @@ import {
 /**
  * EncryptionService implements HPKE with a specific Auth/Base mode pattern for TEE operations:
  *
- * **ENCRYPTION (Auth Mode):**
- * - Uses the TEE's static key pair for authentication
- * - Provides sender authenticity and forward secrecy
- * - Recipients can cryptographically verify the TEE's identity
- * - Complements client-side Base mode decryption with sender verification
- *
  * **DECRYPTION (Base Mode):**
  * - Does not require sender verification during decryption
  * - Allows for asymmetric verification patterns
