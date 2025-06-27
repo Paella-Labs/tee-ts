@@ -1,6 +1,6 @@
 import { z } from "zod";
 
-export const ENVSchema = z.object({
+const ENVSchema = z.object({
 	PORT: z
 		.string()
 		.optional()

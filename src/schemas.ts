@@ -62,7 +62,7 @@ export const StartOnboardingRequestSchema = z.object({
 		publicKey: z.string().min(1, { message: "Public key is required" }),
 	}),
 });
-export type StartOnboardingRequest = z.infer<
+type StartOnboardingRequest = z.infer<
 	typeof StartOnboardingRequestSchema
 >;
 

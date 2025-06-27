@@ -66,6 +66,6 @@ export async function TEEIdentityKey(): Promise<CryptoKeyPair> {
  *
  * @returns Promise resolving to CryptoKeyPair for development/testing use
  */
-export async function devIdentityKey(): Promise<CryptoKeyPair> {
+async function devIdentityKey(): Promise<CryptoKeyPair> {
 	return await crypto.subtle.generateKey(ALGORITHM, EXTRACTABLE, PERMISSIONS);
 }
