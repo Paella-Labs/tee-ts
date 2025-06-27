@@ -1,4 +1,5 @@
 import { z } from "zod";
+import { OTP_DIGITS } from "./services/otp.service";
 
 const AuthMethod = {
 	EMAIL: "email",
@@ -69,7 +70,9 @@ export type StartOnboardingRequest = z.infer<
 export const CompleteOnboardingRequestSchema = z.object({
 	deviceId: z.string().min(1, { message: "Device ID is required" }),
 	onboardingAuthentication: z.object({
-		otp: z.string().length(6, { message: "OTP must be 6 digits" }),
+		otp: z
+			.string()
+			.length(OTP_DIGITS, { message: `OTP must be ${OTP_DIGITS} digits` }),
 	}),
 });
 

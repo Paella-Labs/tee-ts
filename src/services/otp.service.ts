@@ -9,6 +9,8 @@ interface OTPRequest {
 	failedAttempts: number;
 }
 
+export const OTP_DIGITS = 9;
+
 /**
  * Security Configuration for OTP Service
  *
@@ -32,7 +34,7 @@ export interface OTPService {
 	 * @param signerId - Unique identifier for the signer
 	 * @param authId - Authentication context identifier
 	 * @param deviceId - Unique device identifier
-	 * @returns 6-digit numeric OTP string
+	 * @returns 9-digit numeric OTP string
 	 * @throws Response with 429 status if device onboarding rate limit exceeded
 	 */
 	generateOTP(signerId: string, authId: string, deviceId: string): string;
@@ -171,9 +173,7 @@ export class InMemoryOTPService implements OTPService {
 
 			throw new Response(
 				JSON.stringify({
-					error: `Invalid OTP (${
-						request.failedAttempts
-					}/${SECURITY_CONFIG.MAX_FAILED_ATTEMPTS} attempts)`,
+					error: `Invalid OTP (${request.failedAttempts}/${SECURITY_CONFIG.MAX_FAILED_ATTEMPTS} attempts)`,
 				}),
 				{
 					status: 401,
@@ -228,7 +228,7 @@ export class InMemoryOTPService implements OTPService {
 	 * @private
 	 */
 	private createRandomOTP(): string {
-		const length = 6;
+		const length = OTP_DIGITS;
 		const maxValue = 10 ** length - 1;
 
 		const randomBytes = new Uint8Array(4);
