@@ -3,7 +3,7 @@ import type { ServiceInstances } from "../types";
 import { HPKEService } from "./security/hpke.service";
 import { TrustedService } from "./security/trusted.service";
 import { InMemoryOTPService } from "./security/otp/otp.service";
-import { KeyService } from "./user/key.service";
+import { UserSecretService } from "./user/user-secret.service";
 import { SendgridEmailService } from "./communication/email.service";
 import { DatadogMetricsService } from "./metrics.service";
 import { TeeKeyService } from "./security/tee-key.service";
@@ -31,7 +31,7 @@ export async function initializeServices(
 	);
 	console.log("Email service initialized successfully");
 
-	const keyService = new KeyService(identityKey);
+	const keyService = new UserSecretService(identityKey);
 	console.log("Key service initialized successfully");
 
 	const trustedService = new TrustedService(

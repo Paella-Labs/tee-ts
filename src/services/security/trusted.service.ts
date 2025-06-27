@@ -1,7 +1,7 @@
 import type { HPKEService } from "./hpke.service";
 import type { OTPService } from "./otp/otp.service";
 import type { EmailService } from "../communication/email.service";
-import type { KeyService } from "../user/key.service";
+import type { UserSecretService } from "../user/user-secret.service";
 import type { KeyType } from "../../schemas";
 import type { PublicKeyResponse } from "types";
 import type { FPEService } from "./fpe.service";
@@ -11,7 +11,7 @@ export class TrustedService {
 	constructor(
 		private readonly otpService: OTPService,
 		private readonly emailService: EmailService,
-		private readonly keyService: KeyService,
+		private readonly userSecretService: UserSecretService,
 		private readonly encryptionService: HPKEService,
 		private readonly fpeService: FPEService,
 	) {}
@@ -21,7 +21,11 @@ export class TrustedService {
 		authId: string,
 		keyType: KeyType,
 	): Promise<PublicKeyResponse> {
-		return await this.keyService.derivePublicKey(signerId, authId, keyType);
+		return await this.userSecretService.derivePublicKey(
+			signerId,
+			authId,
+			keyType,
+		);
 	}
 
 	/**
@@ -60,7 +64,7 @@ export class TrustedService {
 	}
 
 	/**
-	 * Verify OTP and generate key shares
+	 * Verify OTP and generate master user key
 	 */
 	public async completeOnboarding(
 		deviceId: string,
@@ -71,10 +75,11 @@ export class TrustedService {
 		teepublicKey: string;
 	}> {
 		const request = this.otpService.verifyOTP(deviceId, otp);
-		const { masterUserKey } = await this.keyService.generateKey(
-			request.signerId,
-			request.authId,
-		);
+		const { masterUserSecret: masterUserKey } =
+			await this.userSecretService.generateMasterSecret(
+				request.signerId,
+				request.authId,
+			);
 		return {
 			masterUserKey,
 			signerId: request.signerId,

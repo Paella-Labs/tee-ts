@@ -9,7 +9,7 @@ import {
 /**
  * Service for key derivation and management
  */
-export class KeyService {
+export class UserSecretService {
 	private readonly HASH_ALGORITHM = "SHA-256";
 	private readonly strategies: Map<KeyType, KeyDerivationStrategy>;
 
@@ -40,16 +40,16 @@ export class KeyService {
 	/**
 	 * Generate and split a key into device and auth shares
 	 */
-	public async generateKey(
+	public async generateMasterSecret(
 		signerId: string,
 		authId: string,
 	): Promise<{
-		masterUserKey: Uint8Array;
+		masterUserSecret: Uint8Array;
 	}> {
 		const masterSecret = await this.deriveMasterSecret(signerId, authId);
 
 		return {
-			masterUserKey: masterSecret,
+			masterUserSecret: masterSecret,
 		};
 	}
 

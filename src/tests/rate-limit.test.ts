@@ -7,7 +7,7 @@ import type { ServiceInstances } from "../types";
 import { HPKEService } from "../services/security/hpke.service";
 import { TrustedService } from "../services/security/trusted.service";
 import { InMemoryOTPService } from "../services/security/otp/otp.service";
-import { KeyService } from "../services/user/key.service";
+import { UserSecretService } from "../services/user/user-secret.service";
 import type { EmailService } from "../services/communication/email.service";
 import type { MetricsService } from "../services/metrics.service";
 import { TeeKeyService } from "../services/security/tee-key.service";
@@ -49,7 +49,7 @@ async function initializeServicesWithMockEmail(
 
 	const otpService = InMemoryOTPService.getInstance();
 	const emailService = new MockEmailService();
-	const keyService = new KeyService(identityKey);
+	const keyService = new UserSecretService(identityKey);
 	const trustedService = new TrustedService(
 		otpService,
 		emailService,

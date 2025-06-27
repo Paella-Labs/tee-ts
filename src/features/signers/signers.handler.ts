@@ -10,6 +10,7 @@ import {
 import type { z } from "zod";
 import { HTTPException } from "hono/http-exception";
 import { PublicKeySerializer } from "@crossmint/client-signers-cryptography";
+const HASH_ALGORITHM = "SHA-256";
 
 export const derivePublicKeyHandler = async (c: AppContext) => {
 	const services = c.get("services");
@@ -87,33 +88,27 @@ export const completeOnboardingHandler = async (c: AppContext) => {
 	const { masterUserKey, signerId, teepublicKey } =
 		await services.trustedService.completeOnboarding(deviceId, otp);
 
-	const encryptedUserKey = await services.symmetricEncryptionService.encrypt(
-		masterUserKey,
-		await PublicKeySerializer.deserialize(senderPublicKey),
-	);
+	const encryptedMasterSecret =
+		await services.symmetricEncryptionService.encrypt(
+			masterUserKey,
+			await PublicKeySerializer.deserialize(senderPublicKey),
+		);
 
 	return c.json({
-		encryptedUserKey: {
-			bytes: Buffer.from(encryptedUserKey).toString("base64"),
-			encoding: "base64",
+		encryptedMasterSecret: {
+			...toBase64(Buffer.from(encryptedMasterSecret).buffer),
 			encryptionPublicKey: teepublicKey,
 		},
-		userKeyHash: {
-			bytes: Buffer.from(
-				await crypto.subtle.digest("SHA-256", masterUserKey),
-			).toString("base64"),
-			encoding: "base64",
-			algorithm: "SHA-256",
-		},
-		signature: {
-			bytes: "",
-			encoding: "base64",
-			algorithm: "ECDSA",
-			signingPublicKey: await PublicKeySerializer.serialize(
-				(await services.teeKeyService.getKeyPair()).publicKey,
-			),
+		masterSecretHash: {
+			...toBase64(await crypto.subtle.digest(HASH_ALGORITHM, masterUserKey)),
+			algorithm: HASH_ALGORITHM,
 		},
 		deviceId,
 		signerId,
 	});
 };
+
+const toBase64 = (data: ArrayBuffer) => ({
+	bytes: Buffer.from(data).toString("base64"),
+	encoding: "base64",
+});
