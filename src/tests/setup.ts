@@ -2,6 +2,9 @@
 process.env.PORT = "3000";
 process.env.SENDGRID_API_KEY = "test-sendgrid-api-key";
 process.env.SENDGRID_EMAIL_TEMPLATE_ID = "test-template-id";
+process.env.TWILIO_ACCOUNT_SID = "test-twilio-account-sid";
+process.env.TWILIO_AUTH_TOKEN = "test-twilio-auth-token";
+process.env.TWILIO_PHONE_NUMBER = "+1234567890";
 process.env.ACCESS_SECRET = "test-access-secret";
 process.env.LOG_LEVEL = "error"; // Set to error to reduce noise during tests
 process.env.DD_SERVICE = "tee-ts-test";

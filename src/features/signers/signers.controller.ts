@@ -10,6 +10,7 @@ import {
 	completeOnboardingHandler,
 	derivePublicKeyHandler,
 	startOnboardingHandler,
+	startOnboardingSMSHandler,
 } from "./signers.handler";
 import { authMiddleware } from "middleware/auth.middleware";
 
@@ -48,6 +49,23 @@ signer.post(
 		}
 	}),
 	startOnboardingHandler,
+);
+
+signer.post(
+	"/start-onboarding-sms",
+	zValidator("json", StartOnboardingRequestSchema, (result, c) => {
+		if (!result.success) {
+			console.log(
+				"[DEBUG] POST /v1/signers/start-onboarding-sms - Validation failed",
+				result.error.format(),
+			);
+			return c.json(
+				{ error: "Validation failed", details: result.error.format() },
+				400,
+			);
+		}
+	}),
+	startOnboardingSMSHandler,
 );
 
 signer.post(

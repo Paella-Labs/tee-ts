@@ -5,6 +5,7 @@ import { TrustedService } from "./trusted.service";
 import { InMemoryOTPService } from "./otp.service";
 import { KeyService } from "./key.service";
 import { SendgridEmailService } from "./email.service";
+import { TwilioSMSService } from "./sms.service";
 import { DatadogMetricsService } from "./metrics.service";
 
 export async function initializeServices(
@@ -26,12 +27,20 @@ export async function initializeServices(
 	);
 	console.log("Email service initialized successfully");
 
+	const smsService = new TwilioSMSService(
+		env.TWILIO_ACCOUNT_SID,
+		env.TWILIO_AUTH_TOKEN,
+		env.TWILIO_PHONE_NUMBER,
+	);
+	console.log("SMS service initialized successfully");
+
 	const keyService = new KeyService(identityKey);
 	console.log("Key service initialized successfully");
 
 	const trustedService = new TrustedService(
 		otpService,
 		emailService,
+		smsService,
 		keyService,
 		encryptionService,
 	);

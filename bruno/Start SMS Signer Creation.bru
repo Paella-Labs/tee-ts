@@ -1,0 +1,54 @@
+meta {
+  name: Start SMS Signer Creation
+  type: http
+  seq: 3
+}
+
+post {
+  url: {{baseUrl}}/v1/signers/start-onboarding-sms
+  body: json
+  auth: {
+    type: bearer
+    token: {{accessSecret}}
+  }
+}
+
+headers {
+  Content-Type: application/json
+}
+
+body:json {
+  {
+    "deviceId": "device-sms-123",
+    "signerId": "signer-sms-123",
+    "projectName": "SMS Test Project",
+    "authId": "phone:+1234567890",
+    "encryptionContext": {
+      "publicKey": "BMxzex+oSRC3yiAPhYmIHrZ1iuVLmDO05O6x6+Q8oCO4Vi1Gd7NnOSyCpv6MwA6bZo4pR9ky4tEsRdKsVrR6eas="
+    }
+  }
+}
+
+docs {
+  # Start SMS Signer Creation
+  
+  This endpoint initiates the signer onboarding process via SMS OTP.
+  
+  ## Request Body
+  
+  - `deviceId`: Unique identifier for the device
+  - `signerId`: Unique identifier for the signer
+  - `projectName`: Name of the project
+  - `authId`: Phone number in format `phone:+1234567890`
+  - `encryptionContext.publicKey`: Public key for OTP encryption
+  
+  ## Response
+  
+  Returns a success message when the SMS OTP is sent successfully.
+  
+  ## Notes
+  
+  - Requires valid Twilio credentials in environment variables
+  - The phone number in `authId` must be in international format
+  - OTP will be sent via SMS instead of email
+} 

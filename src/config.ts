@@ -11,6 +11,15 @@ export const ENVSchema = z.object({
 	SENDGRID_EMAIL_TEMPLATE_ID: z
 		.string()
 		.min(1, { message: "SendGrid email template ID is required" }),
+	TWILIO_ACCOUNT_SID: z
+		.string()
+		.min(1, { message: "Twilio Account SID is required" }),
+	TWILIO_AUTH_TOKEN: z
+		.string()
+		.min(1, { message: "Twilio Auth Token is required" }),
+	TWILIO_PHONE_NUMBER: z
+		.string()
+		.min(1, { message: "Twilio Phone Number is required" }),
 	ACCESS_SECRET: z.string().min(1, { message: "ACCESS_SECRET is required" }),
 	LOG_LEVEL: z.string().optional().default("info"),
 	DD_SERVICE: z.string(),
