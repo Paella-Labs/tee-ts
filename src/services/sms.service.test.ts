@@ -20,11 +20,11 @@ describe("TwilioSMSService", () => {
 
 	beforeEach(() => {
 		mock.restore();
-		
+
 		smsService = new TwilioSMSService(
 			"test_account_sid",
 			"test_auth_token",
-			"+1234567890"
+			"+1234567890",
 		);
 	});
 
@@ -34,7 +34,7 @@ describe("TwilioSMSService", () => {
 				"123456",
 				"+1987654321",
 				"Test Project",
-				"5 minutes"
+				"5 minutes",
 			);
 
 			expect(mockTwilioClient.messages.create).toHaveBeenCalledWith({
@@ -47,8 +47,9 @@ describe("TwilioSMSService", () => {
 		it("should use default expiry time when not provided", async () => {
 			await smsService.sendOTPSMS(
 				"123456",
+
 				"+1987654321",
-				"Test Project"
+				"Test Project",
 			);
 
 			expect(mockTwilioClient.messages.create).toHaveBeenCalledWith({
@@ -63,12 +64,8 @@ describe("TwilioSMSService", () => {
 			mockTwilioClient.messages.create = mock(() => Promise.reject(mockError));
 
 			await expect(
-				smsService.sendOTPSMS(
-					"123456",
-					"+1987654321",
-					"Test Project"
-				)
+				smsService.sendOTPSMS("123456", "+1987654321", "Test Project"),
 			).rejects.toThrow("Failed to send SMS: Twilio API error");
 		});
 	});
-}); 
+});

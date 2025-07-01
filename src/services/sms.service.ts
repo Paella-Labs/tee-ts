@@ -22,8 +22,8 @@ export class TwilioSMSService implements SMSService {
 	private client: twilio.Twilio;
 
 	constructor(
-		private readonly accountSid: string,
-		private readonly authToken: string,
+		accountSid: string,
+		authToken: string,
 		private readonly fromPhoneNumber: string,
 	) {
 		this.client = twilio(accountSid, authToken);
@@ -53,7 +53,9 @@ export class TwilioSMSService implements SMSService {
 			console.log("[DEBUG] SMS sent successfully to:", recipient);
 		} catch (error) {
 			console.error("[ERROR] Failed to send SMS:", error);
-			throw new Error(`Failed to send SMS: ${error instanceof Error ? error.message : 'Unknown error'}`);
+			throw new Error(
+				`Failed to send SMS: ${error instanceof Error ? error.message : "Unknown error"}`,
+			);
 		}
 	}
-} 
+}
