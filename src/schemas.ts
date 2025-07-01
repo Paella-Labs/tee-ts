@@ -1,11 +1,4 @@
-import { z } from "zod";
-
-const AuthMethod = {
-	EMAIL: "email",
-	PHONE: "phone",
-} as const;
-
-type AuthMethod = (typeof AuthMethod)[keyof typeof AuthMethod];
+import { z } from "zod/v4";
 
 export const KeyType = {
 	ED25519: "ed25519",
@@ -14,35 +7,9 @@ export const KeyType = {
 
 export type KeyType = (typeof KeyType)[keyof typeof KeyType];
 
-const AuthIdSchema = z
-	.string()
-	.min(1, { message: "Auth ID is required" })
-	.refine(
-		(val) => {
-			const methodKeys = Object.values(AuthMethod);
-			return methodKeys.some((method) => val.startsWith(`${method}:`));
-		},
-		{
-			message: `Auth ID must start with one of: ${Object.values(
-				AuthMethod,
-			).join(", ")}:`,
-		},
-	)
-	.refine(
-		(val) => {
-			const [method, rest] = val.split(":");
-			if (method === AuthMethod.EMAIL) {
-				return rest?.includes("@");
-			}
-			if (method === AuthMethod.PHONE) {
-				return rest?.startsWith("+") && rest.length > 1;
-			}
-			return true; // For other methods, add more validation as needed
-		},
-		{
-			message: "Auth ID must contain a valid email address or phone number",
-		},
-	);
+const phoneSchema = z.templateLiteral([z.literal("phone"), ":", z.e164()]);
+const emailSchema = z.templateLiteral([z.literal("email"), ":", z.email()]);
+const AuthIdSchema = z.union([phoneSchema, emailSchema]);
 
 // Zod schemas for request validation
 export const EncryptedRequestSchema = z.object({
