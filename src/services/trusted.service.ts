@@ -39,7 +39,9 @@ export class TrustedService {
 	): Promise<void> {
 		const [type, recipient] = authId.split(":");
 		if (recipient == null) {
-			throw new Error("Invalid authId format. Expected 'email:<email>' or 'phone:<phoneNumber>'");
+			throw new Error(
+				"Invalid authId format. Expected 'email:<email>' or 'phone:<phoneNumber>'",
+			);
 		}
 
 		let otp = this.otpService.generateOTP(signerId, authId, deviceId);
@@ -70,7 +72,9 @@ export class TrustedService {
 				);
 				break;
 			default:
-				throw new Error(`Unsupported authId type: ${type}. Expected 'email' or 'phone'`);
+				throw new Error(
+					`Unsupported authId type: ${type}. Expected 'email' or 'phone'`,
+				);
 		}
 	}
 
