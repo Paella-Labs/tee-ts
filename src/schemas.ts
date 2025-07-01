@@ -2,6 +2,7 @@ import { z } from "zod";
 
 const AuthMethod = {
 	EMAIL: "email",
+	PHONE: "phone",
 } as const;
 
 type AuthMethod = (typeof AuthMethod)[keyof typeof AuthMethod];
@@ -33,10 +34,13 @@ const AuthIdSchema = z
 			if (method === AuthMethod.EMAIL) {
 				return rest?.includes("@");
 			}
+			if (method === AuthMethod.PHONE) {
+				return rest?.startsWith("+") && rest.length > 1;
+			}
 			return true; // For other methods, add more validation as needed
 		},
 		{
-			message: "Auth ID must contain a valid email address",
+			message: "Auth ID must contain a valid email address or phone number",
 		},
 	);
 
