@@ -49,8 +49,7 @@ Use the Bruno API client to test the endpoints:
 1. Open Bruno collection located in `./bruno`
 2. Test the signer flow:
    - Derive public key with `POST /v1/signers/derive-public-key`
-   - Start onboarding with `POST /v1/signers/start-onboarding` (email)
-   - Start onboarding with `POST /v1/signers/start-onboarding-sms` (SMS)
+   - Start onboarding with `POST /v1/signers/start-onboarding` (supports both email and SMS)
    - Complete onboarding with `POST /v1/signers/complete-onboarding`
 
 ## API Endpoints
@@ -64,8 +63,7 @@ Use the Bruno API client to test the endpoints:
 
 ### Signers
 - `POST /v1/signers/derive-public-key` - Derive a public key for a signer
-- `POST /v1/signers/start-onboarding` - Start the signer onboarding process (email OTP)
-- `POST /v1/signers/start-onboarding-sms` - Start the signer onboarding process (SMS OTP)
+- `POST /v1/signers/start-onboarding` - Start the signer onboarding process (supports email and SMS OTP)
 - `POST /v1/signers/complete-onboarding` - Complete the signer onboarding process
 
 ## SMS Integration
@@ -85,17 +83,32 @@ The service now supports SMS-based OTP delivery using Twilio. To use SMS functio
    ```
 
 3. **Usage:**
-   - Use the `/v1/signers/start-onboarding-sms` endpoint instead of `/v1/signers/start-onboarding`
-   - The `authId` should be in the format `phone:+1234567890` for SMS delivery
-   - The OTP will be sent via SMS instead of email
+   - Use the `/v1/signers/start-onboarding` endpoint with `authId` in format `phone:+1234567890` for SMS delivery
+   - Use the `/v1/signers/start-onboarding` endpoint with `authId` in format `email:user@example.com` for email delivery
+   - The service automatically detects the delivery method based on the `authId` format
 
-4. **Example Request:**
+4. **Example Request for SMS:**
    ```json
    {
      "deviceId": "device-123",
      "signerId": "signer-123",
      "projectName": "My Project",
      "authId": "phone:+1234567890",
+     "keyType": "secp256k1",
+     "encryptionContext": {
+       "publicKey": "your_public_key_here"
+     }
+   }
+   ```
+
+5. **Example Request for Email:**
+   ```json
+   {
+     "deviceId": "device-123",
+     "signerId": "signer-123",
+     "projectName": "My Project",
+     "authId": "email:user@example.com",
+     "keyType": "secp256k1",
      "encryptionContext": {
        "publicKey": "your_public_key_here"
      }

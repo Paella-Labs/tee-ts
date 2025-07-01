@@ -50,27 +50,6 @@ export const startOnboardingHandler = async (c: AppContext) => {
 	return c.json({ message: "OTP sent successfully" });
 };
 
-export const startOnboardingSMSHandler = async (c: AppContext) => {
-	const services = c.get("services");
-	const body = await c.req.json<z.infer<typeof StartOnboardingRequestSchema>>();
-	const {
-		projectName,
-		authId,
-		deviceId,
-		encryptionContext,
-		signerId,
-	} = body;
-
-	await services.trustedService.startOnboardingSMS(
-		signerId,
-		projectName,
-		authId,
-		deviceId,
-		encryptionContext,
-	);
-	return c.json({ message: "SMS OTP sent successfully" });
-};
-
 export const completeOnboardingHandler = async (c: AppContext) => {
 	const services = c.get("services");
 	const encryptedBody = await c.req.json<EncryptedRequest>();

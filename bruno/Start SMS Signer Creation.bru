@@ -5,7 +5,7 @@ meta {
 }
 
 post {
-  url: {{baseUrl}}/v1/signers/start-onboarding-sms
+  url: {{baseUrl}}/v1/signers/start-onboarding
   body: json
   auth: {
     type: bearer
@@ -51,4 +51,5 @@ docs {
   - Requires valid Twilio credentials in environment variables
   - The phone number in `authId` must be in international format
   - OTP will be sent via SMS instead of email
+  - This endpoint now supports both email and SMS based on the authId format
 } 

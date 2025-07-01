@@ -9,6 +9,7 @@ import { TrustedService } from "../services/trusted.service";
 import { InMemoryOTPService } from "../services/otp.service";
 import { KeyService } from "../services/key.service";
 import type { EmailService } from "../services/email.service";
+import type { SMSService } from "../services/sms.service";
 import type { MetricsService } from "../services/metrics.service";
 
 // Mock email service that doesn't actually send emails
@@ -19,6 +20,18 @@ class MockEmailService implements EmailService {
 		projectName: string,
 		expiryMinutes?: string,
 		projectLogo?: string,
+	): Promise<void> {
+		return Promise.resolve();
+	}
+}
+
+// Mock SMS service that doesn't actually send SMS
+class MockSMSService implements SMSService {
+	async sendOTPSMS(
+		otp: string,
+		recipient: string,
+		projectName: string,
+		expiryMinutes?: string,
 	): Promise<void> {
 		return Promise.resolve();
 	}
@@ -43,10 +56,12 @@ async function initializeServicesWithMockEmail(
 	await encryptionService.init(identityKey);
 	const otpService = InMemoryOTPService.getInstance();
 	const emailService = new MockEmailService();
+	const smsService = new MockSMSService();
 	const keyService = new KeyService(identityKey);
 	const trustedService = new TrustedService(
 		otpService,
 		emailService,
+		smsService,
 		keyService,
 		encryptionService,
 	);
