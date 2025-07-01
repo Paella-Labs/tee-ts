@@ -94,7 +94,6 @@ The service now supports SMS-based OTP delivery using Twilio. To use SMS functio
      "signerId": "signer-123",
      "projectName": "My Project",
      "authId": "phone:+1234567890",
-     "keyType": "secp256k1",
      "encryptionContext": {
        "publicKey": "your_public_key_here"
      }
@@ -108,7 +107,6 @@ The service now supports SMS-based OTP delivery using Twilio. To use SMS functio
      "signerId": "signer-123",
      "projectName": "My Project",
      "authId": "email:user@example.com",
-     "keyType": "secp256k1",
      "encryptionContext": {
        "publicKey": "your_public_key_here"
      }
