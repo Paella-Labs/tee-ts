@@ -1,7 +1,6 @@
 import { describe, it, expect, mock, beforeEach } from "bun:test";
 import { TwilioSMSService } from "./sms.service";
 
-// Mock twilio
 const mockTwilioClient = {
 	messages: {
 		create: mock(() => Promise.resolve({ sid: "test_sid" })),
@@ -10,7 +9,6 @@ const mockTwilioClient = {
 
 const mockTwilio = mock(() => mockTwilioClient);
 
-// Mock the twilio module
 mock.module("twilio", () => ({
 	default: mockTwilio,
 }));

@@ -39,7 +39,6 @@ export class TwilioSMSService implements SMSService {
 		expiryMinutes = "5 minutes",
 	): Promise<void> {
 		const message = `Your ${projectName} verification code is: ${otp}. This code expires in ${expiryMinutes}.`;
-
 		console.log("[DEBUG] Attempting to send SMS to:", recipient);
 
 		try {
