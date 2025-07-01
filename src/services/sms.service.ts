@@ -41,7 +41,6 @@ export class TwilioSMSService implements SMSService {
 		const message = `Your ${projectName} verification code is: ${otp}. This code expires in ${expiryMinutes}.`;
 
 		console.log("[DEBUG] Attempting to send SMS to:", recipient);
-		console.log("[DEBUG] Message:", message);
 
 		try {
 			await this.client.messages.create({
