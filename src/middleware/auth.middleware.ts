@@ -10,12 +10,15 @@ export const authMiddleware = () => {
 		const authorizationHeader = c.req.header("authorization");
 
 		if (authorizationHeader !== accessSecret) {
-		logger.warn("[Auth] Unauthorized attempt", {
-			url: c.req.url,
-			client_ip: validateIpAddress(c.req.header("cf-connecting-ip")) ||
-				validateIpAddress(c.req.header("x-real-ip")) ||
-				validateIpAddress(c.req.header("x-forwarded-for")?.split(",")[0]?.trim()),
-		});
+			logger.warn("[Auth] Unauthorized attempt", {
+				url: c.req.url,
+				client_ip:
+					validateIpAddress(c.req.header("cf-connecting-ip")) ||
+					validateIpAddress(c.req.header("x-real-ip")) ||
+					validateIpAddress(
+						c.req.header("x-forwarded-for")?.split(",")[0]?.trim(),
+					),
+			});
 			throw new HTTPException(401, { message: "Unauthorized" });
 		}
 		await next();

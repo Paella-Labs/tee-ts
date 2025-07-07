@@ -15,14 +15,18 @@ export const requestLogger = (): MiddlewareHandler => {
 				client_ip:
 					validateIpAddress(c.req.header("cf-connecting-ip")) ||
 					validateIpAddress(c.req.header("x-real-ip")) ||
-					validateIpAddress(c.req.header("x-forwarded-for")?.split(",")[0]?.trim()),
+					validateIpAddress(
+						c.req.header("x-forwarded-for")?.split(",")[0]?.trim(),
+					),
 			},
 			network: {
 				client: {
 					ip:
 						validateIpAddress(c.req.header("cf-connecting-ip")) ||
 						validateIpAddress(c.req.header("x-real-ip")) ||
-						validateIpAddress(c.req.header("x-forwarded-for")?.split(",")[0]?.trim()) ||
+						validateIpAddress(
+							c.req.header("x-forwarded-for")?.split(",")[0]?.trim(),
+						) ||
 						c.env?.REMOTE_ADDR,
 				},
 			},
