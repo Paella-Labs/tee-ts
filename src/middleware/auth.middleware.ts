@@ -1,5 +1,6 @@
 import { createMiddleware } from "hono/factory";
 import { HTTPException } from "hono/http-exception";
+import { timingSafeEqual } from "node:crypto";
 import type { AppEnv } from "../types";
 
 export const authMiddleware = () => {
@@ -8,7 +9,10 @@ export const authMiddleware = () => {
 		const logger = c.get("logger");
 		const authorizationHeader = c.req.header("authorization");
 
-		if (authorizationHeader !== accessSecret) {
+		const a = Buffer.from(authorizationHeader || "");
+		const b = Buffer.from(accessSecret);
+		
+		if (a.length !== b.length || !timingSafeEqual(a, b)) {
 			logger.warn("[Auth] Unauthorized attempt", {
 				url: c.req.url,
 				client_ip: c.req.header("x-forwarded-for")?.split(",")[0]?.trim(),
