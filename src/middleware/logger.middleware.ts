@@ -1,4 +1,5 @@
 import type { MiddlewareHandler } from "hono";
+import { validateIpAddress } from "../utils/validateIpAddress";
 
 export const requestLogger = (): MiddlewareHandler => {
 	return async (c, next) => {
@@ -12,16 +13,16 @@ export const requestLogger = (): MiddlewareHandler => {
 				method: method,
 				url: requestUrl,
 				client_ip:
-					c.req.header("x-forwarded-for")?.split(",")[0]?.trim() ||
-					c.req.header("cf-connecting-ip") ||
-					c.req.header("x-real-ip"),
+					validateIpAddress(c.req.header("cf-connecting-ip")) ||
+					validateIpAddress(c.req.header("x-real-ip")) ||
+					validateIpAddress(c.req.header("x-forwarded-for")?.split(",")[0]?.trim()),
 			},
 			network: {
 				client: {
 					ip:
-						c.req.header("x-forwarded-for")?.split(",")[0]?.trim() ||
-						c.req.header("cf-connecting-ip") ||
-						c.req.header("x-real-ip") ||
+						validateIpAddress(c.req.header("cf-connecting-ip")) ||
+						validateIpAddress(c.req.header("x-real-ip")) ||
+						validateIpAddress(c.req.header("x-forwarded-for")?.split(",")[0]?.trim()) ||
 						c.env?.REMOTE_ADDR,
 				},
 			},
