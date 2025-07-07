@@ -15,9 +15,9 @@
 	"devDependencies": {
 		"@biomejs/biome": "1.9.4",
 		"@types/bun": "latest",
-		"@types/node": "^22.15.21",
-		"knip": "^5.57.2",
-		"phala": "^1.0.15",
+		"@types/node": "^22.16.0",
+		"knip": "^5.61.3",
+		"phala": "^1.0.18",
 		"ts-unused-exports": "^11.0.1",
 		"typescript": "^5.8.3"
 	},
@@ -33,9 +33,9 @@
 		"@solana/web3.js": "^1.98.2",
 		"datadog-metrics": "^0.12.1",
 		"ethereum-cryptography": "^3.2.0",
-		"hono": "^4.7.10",
+		"hono": "^4.8.4",
 		"shamir-secret-sharing": "0.0.4",
-		"twilio": "^5.7.1",
+		"twilio": "^5.7.2",
 		"winston": "^3.17.0",
 		"zod": "3.24.3"
 	}
