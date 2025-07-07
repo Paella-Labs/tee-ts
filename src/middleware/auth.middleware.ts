@@ -11,7 +11,7 @@ export const authMiddleware = () => {
 
 		const a = Buffer.from(authorizationHeader || "");
 		const b = Buffer.from(accessSecret);
-		
+
 		if (a.length !== b.length || !timingSafeEqual(a, b)) {
 			logger.warn("[Auth] Unauthorized attempt", {
 				url: c.req.url,
