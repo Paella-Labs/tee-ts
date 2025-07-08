@@ -49,5 +49,12 @@ export const rateLimitMiddleware: MiddlewareHandler = async (c, next) => {
 	);
 	c.header("X-RateLimit-Reset", Math.ceil(store[ip].resetTime / 1000).toString());
 
-	await next();
+	try {
+		await next();
+	} catch (error) {
+		if (error instanceof Response) {
+			throw error;
+		}
+		throw error;
+	}
 };
