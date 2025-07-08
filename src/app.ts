@@ -9,6 +9,7 @@ import attestationController from "./features/attestation/attestation.controller
 import healthController from "./features/health/health.controller";
 import { requestLogger } from "middleware/logger.middleware";
 import { httpMetricsMiddleware } from "middleware/metrics.middleware";
+import { rateLimitMiddleware } from "./middleware/rate-limit.middleware";
 import logger from "logging/logger";
 
 export async function createApp(services: ServiceInstances) {
@@ -22,6 +23,7 @@ export async function createApp(services: ServiceInstances) {
 }
 
 function addMiddleware(app: Hono<AppEnv>, services: ServiceInstances) {
+	app.use("*", rateLimitMiddleware);
 	app.use("*", async (c, next) => {
 		c.set("services", services);
 		c.set("env", env);
