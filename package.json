@@ -34,7 +34,6 @@
 		"datadog-metrics": "^0.12.1",
 		"ethereum-cryptography": "^3.2.0",
 		"hono": "^4.7.10",
-		"hono-rate-limiter": "^0.4.2",
 		"shamir-secret-sharing": "0.0.4",
 		"twilio": "^5.7.1",
 		"winston": "^3.17.0",
