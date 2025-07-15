@@ -7,7 +7,7 @@ import {
 	mock,
 	jest,
 } from "bun:test";
-import { InMemoryOTPService } from "./otp.service";
+import { InMemoryOTPService, OTP_DIGITS } from "./otp.service";
 import { OnboardingTracker } from "./onboarding-tracker.service";
 
 /**
@@ -72,7 +72,7 @@ describe("InMemoryOTPService - Security Audit", () => {
 			// ACT: Generate OTP within security limits
 			expect(() => {
 				const otp = otpService.generateOTP(signerId, authId, deviceId);
-				expect(otp).toMatch(/^\d{6}$/); // Verify OTP format
+				expect(otp).toMatch(new RegExp(`^\\d{${OTP_DIGITS}}$`)); // Verify OTP format
 			}).not.toThrow();
 		});
 
@@ -318,7 +318,7 @@ describe("InMemoryOTPService - Security Audit", () => {
 
 			// ACT & ASSERT: Attempt to verify OTP for device without pending authentication
 			try {
-				otpService.verifyOTP(nonExistentDevice, "123456");
+				otpService.verifyOTP(nonExistentDevice, "123456789");
 				expect(true).toBe(false);
 			} catch (error) {
 				// SECURITY VALIDATION: Device validation
